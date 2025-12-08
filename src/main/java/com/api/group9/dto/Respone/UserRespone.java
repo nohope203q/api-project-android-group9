@@ -8,6 +8,4 @@ public class UserRespone {
     private String fullName;
     private String profilePictureUrl;
     private Boolean isVerified;
-
-
 }

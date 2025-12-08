@@ -6,19 +6,15 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import jakarta.persistence.Transient;
 
-import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
-import java.util.List;
+import java.time.Instant;
 
 @Entity 
 @Table(name = "users") 
 @Data
-@AllArgsConstructor
 @NoArgsConstructor
 public class User {
 
@@ -44,16 +40,10 @@ public class User {
 
     private String googleId;
 
-    private String otpCode;
-    private LocalDateTime otpExpiry;
     private Boolean isVerified;
     
-
-    @Transient 
-    private List<String> friendList; 
-    
     @Column(updatable = false) 
-    private LocalDateTime createdAt;
+    private Instant createdAt = Instant.now();
     
-    private LocalDateTime updatedAt;
+    private Instant updatedAt = Instant.now();
 }

@@ -9,9 +9,7 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class RegisterResponse {
     
-    private String status; // Ví dụ: "success" hoặc "error"
+    private String status; 
     private String message;
     
-    // Trường này chỉ dùng trong môi trường DEV để kiểm tra OTP
-    private String test_otp; 
 }

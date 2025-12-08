@@ -30,14 +30,16 @@ public class AuthController {
   
             RegisterResponse response = new RegisterResponse(
                 "success",
-                "Đăng ký thành công! Vui lòng xác thực OTP."
+                "Đăng ký thành công! Vui lòng xác thực OTP.",
+                null
             );
             return ResponseEntity.ok(response);
             
         } catch (RuntimeException e) {
             RegisterResponse errorResponse = new RegisterResponse(
                 "error",
-                e.getMessage()
+                e.getMessage(),
+                null
             );
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
         }

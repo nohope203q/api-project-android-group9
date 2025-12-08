@@ -1,9 +1,13 @@
 package com.api.group9.controller;
 
 import com.api.group9.service.AuthService;
+
+import jakarta.servlet.http.HttpServletRequest;
+
 import com.api.group9.dto.Request.LoginRequest;
 import com.api.group9.dto.Request.RegisterRequest;
 import com.api.group9.dto.Request.VerifyOtpRequest;
+import com.api.group9.dto.Respone.LoginResponse;
 import com.api.group9.dto.Respone.RegisterResponse;
 import com.api.group9.dto.Respone.UserRespone;
 
@@ -23,16 +27,12 @@ public class AuthController {
     @Autowired
     private AuthService authService;
     // --- 1. API Đăng ký tài khoản (/api/register) ---
-    // Request Body: RegisterRequest (username, email, password, fullName)
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody RegisterRequest user) {
         try {
-  
-            RegisterResponse response = new RegisterResponse(
-                "success",
-                "Đăng ký thành công! Vui lòng xác thực OTP."
-            );
-            return ResponseEntity.ok(response);
+            RegisterResponse response = authService.registerUser(user); 
+            
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
             
         } catch (RuntimeException e) {
             RegisterResponse errorResponse = new RegisterResponse(
@@ -44,8 +44,6 @@ public class AuthController {
     }
 
     // --- 2. API Xác thực OTP (/api/verify-otp) ---
-    // Request Body: VerifyOtpRequest (username, otpCode)
-    // Response Body: VerifyOtpResponse (message)
     @PostMapping("/verify-otp")
     public ResponseEntity<?> verifyOtp(@RequestBody VerifyOtpRequest req) {
         try {
@@ -65,16 +63,16 @@ public class AuthController {
     }
 
     // --- 3. API Đăng nhập (/api/login) ---
-    // Request Body: LoginRequest (username, password)
-    // Response Body: LoginResponse (token hoặc user info)
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest req) {
         try {
             UserRespone loggedInUser = authService.login(req);
-            Map<String, Object> response = Map.of(
-                "status", "success",
-                "message", "Đăng nhập thành công!",
-                "user", loggedInUser // Trả về thông tin User đã đăng nhập
+            String token = authService.generateToken(loggedInUser);
+            LoginResponse response = new LoginResponse(
+                "success",
+                "Đăng nhập thành công!",
+                token,
+                loggedInUser 
             );
             return ResponseEntity.ok(response);
 
@@ -83,8 +81,15 @@ public class AuthController {
                 "status", "error",
                 "message", e.getMessage()
             );
-            // 401 Unauthorized nếu đăng nhập thất bại
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
         }
     }
+
+    // --- 4. API Đăng xuất (/api/logout) ---
+    // --- 5. API Lấy lại mật khẩu (/api/forgot-password) ---
+    // --- 6. API Đổi mật khẩu (/api/change-password) ---
+    
+
+
+
 }

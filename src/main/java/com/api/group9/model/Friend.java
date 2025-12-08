@@ -1,44 +1,38 @@
 package com.api.group9.model;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint; 
-
-import com.api.group9.enums.FriendStatus; // Phải tạo file Enum này
-
+import com.api.group9.enums.FriendStatus;
+import jakarta.persistence.*;
 import lombok.Data;
-import java.time.LocalDateTime;
+import lombok.NoArgsConstructor;
+import java.time.Instant; // Dùng Instant
 
 @Entity
-@Table(name = "friends", uniqueConstraints = {
-    // Đảm bảo không thể có 2 dòng giống nhau (userId - friendId)
-    @UniqueConstraint(columnNames = {"userId", "friendId"}) 
+@Table(name = "friendships", uniqueConstraints = {
+    @UniqueConstraint(columnNames = {"sender_id", "receiver_id"}) 
 })
 @Data
+@NoArgsConstructor
 public class Friend {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
-    private Long userId; 
-    @Column(nullable = false)
-    private Long friendId; 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "sender_id", nullable = false)
+    private User sender; 
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "receiver_id", nullable = false)
+    private User receiver; 
 
     // Trạng thái: PENDING, ACCEPTED, REJECTED
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(nullable = false, length = 10) // Giới hạn độ dài cho Enum
     private FriendStatus status; 
 
     @Column(updatable = false)
-    private LocalDateTime createdAt;
+    private Instant createdAt = Instant.now();
     
-    private LocalDateTime respondedAt; 
+    private Instant respondedAt; 
 }

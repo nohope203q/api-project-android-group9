@@ -45,8 +45,6 @@ public class AuthService {
     @Autowired 
     private EmailService emailService;
 
-    private final RedisTemplate<String, Object> redisTemplate;
-
 
     private static final int OTP_EXPIRY_MINUTES = 5;
 

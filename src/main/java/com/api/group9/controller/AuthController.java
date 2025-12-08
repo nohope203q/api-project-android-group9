@@ -2,8 +2,6 @@ package com.api.group9.controller;
 
 import com.api.group9.service.AuthService;
 
-import jakarta.servlet.http.HttpServletRequest;
-
 import com.api.group9.dto.Request.LoginRequest;
 import com.api.group9.dto.Request.RegisterRequest;
 import com.api.group9.dto.Request.VerifyOtpRequest;
@@ -88,7 +86,7 @@ public class AuthController {
     // --- 4. API Đăng xuất (/api/logout) ---
     // --- 5. API Lấy lại mật khẩu (/api/forgot-password) ---
     // --- 6. API Đổi mật khẩu (/api/change-password) ---
-    
+
 
 
 

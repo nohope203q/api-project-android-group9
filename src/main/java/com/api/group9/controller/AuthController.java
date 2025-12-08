@@ -22,30 +22,22 @@ public class AuthController {
 
     @Autowired
     private AuthService authService;
-
-    // --- 1. API Đăng Ký (/api/register) ---
-    // Request Body: User (username, email, fullName, password)
-    // Response Body: RegisterResponse (status, message, test_otp)
+    // --- 1. API Đăng ký tài khoản (/api/register) ---
+    // Request Body: RegisterRequest (username, email, password, fullName)
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody RegisterRequest user) {
         try {
-            // Gọi Service để xử lý logic và trả về OTP
-            String testOtp = authService.registerUser(user);
-            
-            // Trả về response thành công
+  
             RegisterResponse response = new RegisterResponse(
                 "success",
-                "Đăng ký thành công! Vui lòng xác thực OTP.",
-                testOtp // Trả về OTP để client test
+                "Đăng ký thành công! Vui lòng xác thực OTP."
             );
             return ResponseEntity.ok(response);
             
         } catch (RuntimeException e) {
-            // Trả về lỗi
             RegisterResponse errorResponse = new RegisterResponse(
                 "error",
-                e.getMessage(),
-                null    
+                e.getMessage()
             );
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
         }
@@ -79,8 +71,6 @@ public class AuthController {
     public ResponseEntity<?> login(@RequestBody LoginRequest req) {
         try {
             UserRespone loggedInUser = authService.login(req);
-
-            // Trả về thông tin User (hoặc JWT Token nếu mầy có triển khai)
             Map<String, Object> response = Map.of(
                 "status", "success",
                 "message", "Đăng nhập thành công!",

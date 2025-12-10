@@ -75,7 +75,7 @@ public class AuthService {
     userRepository.save(newUser);
 
     generateAndSendOtp(newUser, "Mã xác thực Đăng Ký tài khoản của bạn", OtpCode.OtpPurpose.REGISTER); 
-    return new RegisterResponse("success", "Đăng ký thành công. OTP đã được gửi qua email: ");
+    return new RegisterResponse("success", "Đăng ký thành công. OTP đã được gửi qua email");
 }
     /**
      * Hàm xác thực OTP

@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api") 
+@RequestMapping("/auth") 
 public class AuthController {
 
     @Autowired
@@ -69,8 +69,7 @@ public class AuthController {
             LoginResponse response = new LoginResponse(
                 "success",
                 "Đăng nhập thành công!",
-                token,
-                loggedInUser 
+                token
             );
             return ResponseEntity.ok(response);
 
@@ -82,12 +81,66 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
         }
     }
+    
+    // ---4. generate otp---
+    @PostMapping("/generate-otp")
+    public ResponseEntity<?> generateOtp(@RequestBody Map<String, String> request) {
+        String email = request.get("email");
+        try {
+            authService.resendOTP(email);
+            Map<String, String> response = Map.of(
+                "status", "success",
+                "message", "Mã OTP đã được gửi đến email."
+            );
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            Map<String, String> errorResponse = Map.of(
+                "status", "error",
+                "message", e.getMessage()
+            );
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+        }
+    }
 
-    // --- 4. API Đăng xuất (/api/logout) ---
-    // --- 5. API Lấy lại mật khẩu (/api/forgot-password) ---
-    // --- 6. API Đổi mật khẩu (/api/change-password) ---
+    // ---5. quen mat khau---
+    @PostMapping("/forgot-password")
+    public ResponseEntity<?> forgotPassword(@RequestBody Map<String, String> request) {
+        String email = request.get("email");
+        try {
+            authService.sendOtpForForgotPassword(email);
+            Map<String, String> response = Map.of(
+                "status", "success",
+                "message", "Mã OTP để lấy lại mật khẩu đã được gửi đến email."
+            );
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            Map<String, String> errorResponse = Map.of(
+                "status", "error",
+                "message", e.getMessage()
+            );
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+        }
+    }
 
-
+    // ---6. doi mat khau---
+    @PostMapping("/change-password")
+    public ResponseEntity<?> changePassword(@RequestBody Map<String, String> request) {
+        String email = request.get("email");
+        try {
+            authService.sendOtpForPasswordChange(email);
+            Map<String, String> response = Map.of(
+                "status", "success",
+                "message", "Mã OTP để đổi mật khẩu đã được gửi đến email."
+            );
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            Map<String, String> errorResponse = Map.of(
+                "status", "error",
+                "message", e.getMessage()
+            );
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+        }
+    }
 
 
 }

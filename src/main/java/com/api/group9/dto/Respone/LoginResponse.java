@@ -10,9 +10,7 @@ import lombok.AllArgsConstructor;
 public class LoginResponse {
     
     private String status;
-    private String message;
-    
+    private String message;  
     private String token; 
-    
-    private UserRespone user; 
+
 }

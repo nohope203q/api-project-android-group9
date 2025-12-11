@@ -45,6 +45,9 @@ public class AuthService {
     @Autowired 
     private EmailService emailService;
 
+    @Autowired 
+    private JwtService jwtService;
+
 
     private static final int OTP_EXPIRY_MINUTES = 5;
 
@@ -141,6 +144,8 @@ public class AuthService {
         }
 
         UserRespone userRespone = new UserRespone();
+        String token = jwtService.generateToken(userRespone); 
+        userRespone.setAccessToken(token);
         userRespone.setId(user.getId());
         userRespone.setUsername(user.getUsername());
         userRespone.setEmail(user.getEmail());
@@ -177,6 +182,20 @@ public class AuthService {
         generateAndSendOtp(user, "Mã xác thực ĐỔI MẬT KHẨU của bạn", OtpCode.OtpPurpose.CHANGE_PASSWORD);
 
         return "OTP để đổi mật khẩu đã được gửi đến email của bạn.";
+    }
+
+    public String resendOTP(String email) {
+        Optional<User> userOpt = userRepository.findByEmail(email);
+
+        if (userOpt.isEmpty()) {
+            throw new RuntimeException("Người dùng không tồn tại.");
+        }
+
+        User user = userOpt.get();
+        
+        generateAndSendOtp(user, "Mã OTP của bạn", null);
+
+        return "Mã OTP mới đã được gửi đến email của bạn.";
     }
 
     /**

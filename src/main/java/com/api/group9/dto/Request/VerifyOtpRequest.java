@@ -7,11 +7,7 @@ import lombok.AllArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class VerifyOtpRequest {
-    
+public class VerifyOtpRequest {  
     private String email;
     private String otpCode;
-
-    
-
 }

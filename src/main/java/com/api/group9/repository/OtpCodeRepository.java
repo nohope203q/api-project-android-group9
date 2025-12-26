@@ -1,7 +1,6 @@
 package com.api.group9.repository;
 
 import com.api.group9.model.OtpCode;
-import com.api.group9.model.OtpCode.OtpPurpose;
 import com.api.group9.model.User;
 
 import jakarta.transaction.Transactional;
@@ -17,18 +16,14 @@ import java.util.Optional;
 @Repository
 public interface OtpCodeRepository extends JpaRepository<OtpCode, Long> {
 
-    Optional<OtpCode> findTopByUserAndCodeAndIsUsedFalseAndExpiryTimeAfterOrderByCreatedAtDesc(
+    Optional<OtpCode> findTopByUserAndCodeAndPurposeAndIsUsedFalseAndExpiryTimeAfterOrderByCreatedAtDesc(
         User user, 
         String code, 
+        OtpCode.OtpPurpose purpose,
         Instant expiryTime
     );
 
     void deleteAllByUser(User user);
-    
-    Optional<OtpCode> findTopByUserAndPurposeOrderByCreatedAtDesc(
-        User user,
-        OtpPurpose purpose
-    );
 
     @Modifying
     @Transactional

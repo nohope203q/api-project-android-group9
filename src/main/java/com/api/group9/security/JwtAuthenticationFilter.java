@@ -1,4 +1,5 @@
 package com.api.group9.security;
+
 import com.api.group9.service.JwtService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -14,7 +15,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
-
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
@@ -22,7 +22,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private JwtService jwtService;
 
     @Autowired
-    private UserDetailsService userDetailsService; // Spring Security interface
+    private UserDetailsService userDetailsService;
 
     @Override
     protected void doFilterInternal(
@@ -33,7 +33,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         final String authHeader = request.getHeader("Authorization");
         final String jwt;
-        final String userId;
+        final String userEmail; // <-- Đổi tên biến cho đúng bản chất
 
         // 1. Kiểm tra header Authorization
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
@@ -41,25 +41,30 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
-        // 2. Trích xuất Token và ID người dùng
+        // 2. Trích xuất Token
         jwt = authHeader.substring(7);
         try {
-            userId = jwtService.extractSubject(jwt);
+            // Lấy EMAIL từ token (Thay vì ID như cũ)
+            userEmail = jwtService.extractUsername(jwt); 
         } catch (RuntimeException e) {
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED); 
-            response.getWriter().write(e.getMessage());
+            filterChain.doFilter(request, response);
             return;
         }
 
-        // 3. Xác thực và thiết lập Context
-        if (userId != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            UserDetails userDetails = this.userDetailsService.loadUserByUsername(userId); // Load User bằng ID
-            if (!jwtService.isTokenExpired(jwt)) {
+        // 3. Xác thực
+        if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+            
+            // Load User từ DB bằng EMAIL
+            UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail);
+
+            // Dùng hàm isTokenValid (Public) thay vì isTokenExpired (Private)
+            // Hàm này kiểm tra cả hạn sử dụng lẫn tính chính chủ
+            if (jwtService.isTokenValid(jwt, userDetails)) {
                 
                 UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                     userDetails,
                     null,
-                    userDetails.getAuthorities() 
+                    userDetails.getAuthorities()
                 );
                 authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 

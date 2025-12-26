@@ -44,4 +44,12 @@ public class OtpCode {
     
     @Column(name = "is_used", nullable = false)
     private boolean isUsed = false;
+    @PrePersist
+    protected void onCreate() {
+        if (this.createdAt == null) {
+            this.createdAt = Instant.now();
+        }
+        // Nếu muốn tự động set updatedAt luôn thì thêm:
+        // this.updatedAt = Instant.now();
+    }
 }

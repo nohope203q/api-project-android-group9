@@ -38,8 +38,7 @@ public class User {
 
     private String profilePictureUrl;
 
-    private String googleId;
-
+    private String coverUrl;
     private Boolean isVerified;
     
     @Column(updatable = false) 

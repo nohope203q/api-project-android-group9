@@ -47,7 +47,8 @@ public class SecurityConfig {
                     "/auth/verify-otp", 
                     "/auth/generate-otp", 
                     "/auth/forgot-password", 
-                    "/auth/reset-password"
+                    "/auth/reset-password",
+                    "/user/**"
                 ).permitAll()
                 
                 // 2. Các API CẦN đăng nhập (VD: /auth/change-password, /auth/profile...)

@@ -15,7 +15,8 @@ import java.util.Map;
 @RequestMapping("/auth")
 public class AuthController {
 
-    @Autowired private AuthService authService;
+    @Autowired
+    private AuthService authService;
 
     // 1. Đăng ký
     @PostMapping("/register")
@@ -39,15 +40,20 @@ public class AuthController {
         UserRespone user = authService.login(req);
         // Token đã được tạo trong service hoặc tạo ở đây tùy logic
         // Ở đây giả sử service trả về UserRespone có sẵn token
-        return ResponseEntity.ok(new LoginResponse("success", "Login thành công", user.getAccessToken())); 
+        return ResponseEntity.ok(new LoginResponse("success", "Login thành công", user.getAccessToken()));
     }
 
     // 4. Xin lại OTP (Resend)
     @PostMapping("/generate-otp")
     public ResponseEntity<?> generateOtp(@RequestBody EmailRequest req) {
-        // Mặc định resend cho việc verify account, hoặc mầy có thể thêm field purpose vào EmailRequest
-        authService.sendOtp(req.getEmail(), OtpCode.OtpPurpose.REGISTER); 
-        return ResponseEntity.ok(Map.of("message", "Đã gửi lại OTP."));
+        if (req.getPurpose() == null) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Vui lòng chọn loại OTP (purpose)"));
+        }
+
+        // Gọi service với email và purpose động
+        authService.sendOtp(req.getEmail(), req.getPurpose());
+
+        return ResponseEntity.ok(Map.of("message", "Đã gửi OTP cho mục đích: " + req.getPurpose()));
     }
 
     // 5. Quên mật khẩu - Bước 1: Xin OTP
@@ -60,17 +66,17 @@ public class AuthController {
     // 6. Quên mật khẩu - Bước 2: Reset
     @PostMapping("/reset-password")
     public ResponseEntity<?> resetPassword(@RequestBody ResetPasswordRequest req) {
-        authService.processPasswordReset(req.getEmail(), req.getOtpCode(), req.getNewPassword(), OtpCode.OtpPurpose.FORGOT_PASSWORD);
+        authService.processPasswordReset(req.getEmail(), req.getOtpCode(), req.getNewPassword(),
+                OtpCode.OtpPurpose.FORGOT_PASSWORD);
         return ResponseEntity.ok(Map.of("message", "Đặt lại mật khẩu thành công."));
     }
 
     // 7. Đổi mật khẩu - Bước 1: Xin OTP (Dành cho user ĐÃ LOGIN)
     @PostMapping("/request-change-password")
     public ResponseEntity<?> requestChangePassword(Authentication authentication) {
-        if (authentication == null) throw new RuntimeException("Chưa đăng nhập");
+        if (authentication == null)
+            throw new RuntimeException("Chưa đăng nhập");
         String email = authentication.getName(); // Lấy email từ Token an toàn tuyệt đối
-        String currentPrincipal = authentication.getName();
-        System.out.println("DEBUG: Giá trị lấy từ Token là: " + currentPrincipal);
         authService.sendOtp(email, OtpCode.OtpPurpose.CHANGE_PASSWORD);
         return ResponseEntity.ok(Map.of("message", "OTP đổi mật khẩu đã gửi."));
     }
@@ -78,9 +84,11 @@ public class AuthController {
     // 8. Đổi mật khẩu - Bước 2: Confirm
     @PostMapping("/change-password")
     public ResponseEntity<?> changePassword(@RequestBody ResetPasswordRequest req) {
-        // Lưu ý: Client vẫn phải gửi email trong body để khớp với logic service, 
-        // hoặc mầy có thể overload hàm service để chỉ nhận pass + code nếu muốn bảo mật tận răng.
-        authService.processPasswordReset(req.getEmail(), req.getOtpCode(), req.getNewPassword(), OtpCode.OtpPurpose.CHANGE_PASSWORD);
+        // Lưu ý: Client vẫn phải gửi email trong body để khớp với logic service,
+        // hoặc mầy có thể overload hàm service để chỉ nhận pass + code nếu muốn bảo mật
+        // tận răng.
+        authService.processPasswordReset(req.getEmail(), req.getOtpCode(), req.getNewPassword(),
+                OtpCode.OtpPurpose.CHANGE_PASSWORD);
         return ResponseEntity.ok(Map.of("message", "Đổi mật khẩu thành công."));
     }
 }

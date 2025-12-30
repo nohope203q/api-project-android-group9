@@ -39,16 +39,16 @@ public class EmailService {
             Response response = sg.api(request);
             
             if (response.getStatusCode() >= 200 && response.getStatusCode() < 300) {
-                System.out.println("✅ Đã gửi email thành công qua SendGrid API đến: " + to);
+                System.out.println("Đã gửi email thành công qua SendGrid API đến: " + to);
             } else {
                 // Lỗi API 
                 String errorBody = response.getBody() != null ? response.getBody() : "Unknown Error";
-                System.err.println("❌ Lỗi SendGrid API. Status: " + response.getStatusCode() + ". Response: " + errorBody);
+                System.err.println("Lỗi SendGrid API. Status: " + response.getStatusCode() + ". Response: " + errorBody);
                 throw new RuntimeException("Lỗi API SendGrid: " + response.getStatusCode());
             }
 
         } catch (Exception e) {
-            System.err.println("❌ Lỗi trong quá trình giao tiếp với SendGrid: " + e.getMessage());
+            System.err.println("Lỗi trong quá trình giao tiếp với SendGrid: " + e.getMessage());
             throw new RuntimeException("Lỗi gửi email qua SendGrid.", e); 
         }
     }

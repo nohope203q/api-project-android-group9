@@ -12,6 +12,10 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration; // <--- Import mới
+import org.springframework.web.cors.CorsConfigurationSource; // <--- Import mới
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource; // <--- Import mới
+import java.util.Arrays; // <--- Import mới
 
 @Configuration
 @EnableWebSecurity
@@ -33,26 +37,48 @@ public class SecurityConfig {
         return config.getAuthenticationManager();
     }
 
+    // --- 1. Tạo Bean cấu hình CORS ở đây ---
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        
+        // Cho phép tất cả các nguồn (bao gồm cả file HTML chạy trực tiếp)
+        configuration.setAllowedOriginPatterns(Arrays.asList("*")); 
+        
+        // Cho phép tất cả các method (GET, POST, PUT, DELETE, OPTIONS)
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        
+        // Cho phép tất cả các header (Authorization, Content-Type...)
+        configuration.setAllowedHeaders(Arrays.asList("*"));
+        
+        // Cho phép gửi kèm credentials (quan trọng cho WebSocket/Auth)
+        configuration.setAllowCredentials(true);
+        
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
+    }
+
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
             .csrf(csrf -> csrf.disable())
+            
+            // --- 2. Kích hoạt CORS sử dụng cái Bean vừa tạo bên trên ---
+            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+            
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             
             .authorizeHttpRequests(auth -> auth
                 // 1. Các API KHÔNG CẦN đăng nhập (Public)
                 .requestMatchers(
-                    "/auth/register", 
-                    "/auth/login", 
-                    "/auth/verify-otp", 
-                    "/auth/generate-otp", 
-                    "/auth/forgot-password", 
-                    "/auth/reset-password",
-                    "/user/**"
+                    "/auth/**",      // Gom gọn mấy cái auth lại
+                    "/user/**",
+                    "/ws/**",        // WebSocket
+                    "/messages/**"   // <--- MỞ THÊM CÁI NÀY ĐỂ HTML LOAD LỊCH SỬ CHAT ĐƯỢC
                 ).permitAll()
                 
-                // 2. Các API CẦN đăng nhập (VD: /auth/change-password, /auth/profile...)
-                // Sẽ tự động rơi vào đây
+                // 2. Các API còn lại bắt buộc phải có Token
                 .anyRequest().authenticated()
             );
 

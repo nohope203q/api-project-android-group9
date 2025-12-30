@@ -13,7 +13,6 @@ import lombok.AllArgsConstructor;
 
 import java.time.LocalDateTime;
 
-// Đổi @Document sang @Entity và @Table
 @Entity 
 @Table(name = "comments") 
 @Data
@@ -53,4 +52,5 @@ public class Comment {
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
     }
+
 }

@@ -1,71 +1,78 @@
 package com.api.group9.model;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-import jakarta.persistence.Transient;
-
-import lombok.Data; 
+import jakarta.persistence.*;
+import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
-// Đổi @Document sang @Entity và @Table
-@Entity 
-@Table(name = "posts") 
+@Entity
+@Table(name = "posts")
 @Data
 @NoArgsConstructor
-@AllArgsConstructor 
-public class Post { // Đổi tên class thành Post để nhất quán với Entity
+@AllArgsConstructor
+public class Post {
 
-    // @Id (String) chuyển sang @Id (Long tự tăng)
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id; 
+    private Long id;
 
-    // ID của User phải là Long để tham chiếu đến bảng users
-    @Column(nullable = false)
-    private Long userId; 
+    @Column(name = "user_id", nullable = false)
+    private Long userId;
 
-    // Nội dung bài viết nên dùng TEXT
-    @Column(columnDefinition = "TEXT") 
-    private String content; 
+    @Column(columnDefinition = "TEXT")
+    private String content;
 
-    // Các trường phức tạp (List và Map) cần xử lý đặc biệt
-    @Transient // Tạm thời bỏ qua, không ánh xạ vào cột
-    private List<String> imageUrls; 
-    
-    private String musicUrl; // Vẫn là String bình thường
+    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<PostImage> images = new ArrayList<>(); 
 
-    @Transient // Tạm thời bỏ qua, cần tạo bảng riêng (hoặc dùng JSON)
-    private Map<String, Integer> reactionCounts; 
+    @Transient
+    private Map<String, Integer> reactionCounts;
     
     @Column(nullable = false)
-    private int commentCount = 0; 
+    private int commentCount = 0;
 
-    @Column(updatable = false)
-    private LocalDateTime createdAt;
-    
-    private LocalDateTime updatedAt;
-
-    private String location; 
+    private String location;
 
     @Column(columnDefinition = "BOOLEAN DEFAULT TRUE")
     private boolean isPublic = true;
 
-    // Cập nhật Constructor để dùng Long cho userId
-    public Post(Long userId, String content, List<String> imageUrls, String location) {
-        this.userId = userId;
-        this.content = content;
-        this.imageUrls = imageUrls;
-        this.location = location;
-        this.createdAt = LocalDateTime.now();
+    @Column(updatable = false)
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+
+    @PrePersist
+    protected void onCreate() {
+        LocalDateTime now = LocalDateTime.now();
+        this.createdAt = now;
+        this.updatedAt = now;
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
         this.updatedAt = LocalDateTime.now();
     }
+
+    // --- Helper Methods để Frontend vẫn nhận được List String ---
+    
+    // 1. Getter giả: Trả về List<String> URL từ List<PostImage>
+    // Frontend gọi api sẽ thấy field "imageUrls": ["http...", "http..."]
+    public List<String> getImageUrls() {
+        if (images == null) return new ArrayList<>();
+        return images.stream()
+                     .map(PostImage::getImageUrl)
+                     .collect(Collectors.toList());
+    }
+
+    // 2. Hàm tiện ích để thêm ảnh vào list (Dùng trong Service)
+    public void addImage(PostImage image) {
+        images.add(image);
+        image.setPost(this); // Gắn ngược lại để Hibernate hiểu
+    }
+    
 }

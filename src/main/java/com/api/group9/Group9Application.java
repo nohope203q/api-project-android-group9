@@ -11,7 +11,7 @@ public class Group9Application {
 	public static void main(String[] args) {
 
 	Dotenv dotenv = Dotenv.configure()
-        .directory("D:/haoht203/Documents/source_code/api/group9") 
+        .directory("C:/Users/GiaHuan/Downloads/src/api-project-android-group9") 
         .ignoreIfMalformed()
         .ignoreIfMissing()
         .load();

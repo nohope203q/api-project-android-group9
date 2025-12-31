@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Chat App Real-time (Có Lịch Sử)</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.1.4/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+    <style>
+        body { font-family: sans-serif; padding: 20px; max-width: 800px; margin: 0 auto; display: flex; gap: 20px;}
+        .left-panel { width: 30%; border-right: 1px solid #ccc; padding-right: 20px; }
+        .right-panel { width: 70%; }
+        .box { border: 1px solid #ccc; padding: 15px; margin-bottom: 20px; border-radius: 5px; background: #f0f0f0; }
+        #conversation { height: 400px; overflow-y: scroll; border: 1px solid #ddd; padding: 10px; background: #fff; margin-bottom: 10px;}
+        .msg { margin: 5px 0; padding: 8px; border-radius: 5px; max-width: 70%; word-wrap: break-word; clear: both;}
+        .msg-me { background: #dcf8c6; float: right; text-align: right; }
+        .msg-other { background: #e2e2e2; float: left; text-align: left; }
+        input { padding: 8px; margin: 5px 0; width: 100%; box-sizing: border-box; }
+        button { padding: 10px; width: 100%; cursor: pointer; background: #007bff; color: white; border: none; margin-top: 5px;}
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+
+    <div class="left-panel">
+        <h3>1. Cấu hình</h3>
+        <label>JWT Token:</label>
+        <input type="text" id="jwtToken" placeholder="Paste Token vào đây...">
+        <button onclick="connect()" id="btnConnect">🔌 Kết nối</button>
+        <p id="status" style="color: red; font-weight: bold;">Chưa kết nối</p>
+        
+        <hr>
+
+        <div id="selectUserArea" class="hidden">
+            <h3>2. Chat với ai?</h3>
+            <label>Nhập Email bạn bè:</label>
+            <input type="text" id="recipientId" placeholder="friend@gmail.com">
+            <button onclick="enterChatRoom()" style="background: #28a745;">💬 Vào Chat Ngay</button>
+            <p style="font-size: 12px; color: #666;">(Bấm nút này để load tin nhắn cũ)</p>
+        </div>
+    </div>
+
+    <div class="right-panel hidden" id="chatPanel">
+        <h3 id="chatTitle">Đang chat với: ...</h3>
+        <div id="conversation"></div>
+        
+        <div style="display: flex; gap: 10px;">
+            <input type="text" id="message" placeholder="Nhập tin nhắn..." onkeypress="handleEnter(event)">
+            <button onclick="sendMessage()" style="width: 100px;">Gửi 🚀</button>
+        </div>
+    </div>
+
+    <script>
+        var stompClient = null;
+        var myEmail = ""; 
+        var currentRecipient = ""; // Biến này để biết đang chat với ai
+
+        function connect() {
+            var token = document.getElementById("jwtToken").value;
+            if (!token) { alert("Thiếu Token bro ơi!"); return; }
+
+            // Giải mã lấy Email mình
+            try {
+                var base64Url = token.split('.')[1];
+                var base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+                var jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function(c) {
+                    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+                }).join(''));
+                myEmail = JSON.parse(jsonPayload).sub; // Hoặc .email
+            } catch (e) { console.error(e); }
+
+            var socket = new SockJS('http://localhost:8080/ws');
+            stompClient = Stomp.over(socket);
+            
+            // Tắt log debug của thư viện cho đỡ rối mắt
+            stompClient.debug = null; 
+
+            stompClient.connect({ 'Authorization': 'Bearer ' + token }, function (frame) {
+                document.getElementById("status").innerText = "Online: " + myEmail + " ✅";
+                document.getElementById("status").style.color = "green";
+                document.getElementById("selectUserArea").classList.remove("hidden");
+                document.getElementById("btnConnect").disabled = true;
+
+                stompClient.subscribe('/user/queue/messages', function (payload) {
+                    var body = JSON.parse(payload.body);
+
+                    // CHECK LOẠI TIN NHẮN
+                    if (body.type === 'DELETE') {
+                        // Nếu là lệnh xóa -> Tìm div và xóa khỏi màn hình
+                        var msgDiv = document.getElementById("msg-" + body.messageId);
+                        if (msgDiv) {
+                            msgDiv.remove(); // Xóa thẻ div đi
+                            console.log("Đã xóa tin nhắn ID: " + body.messageId);
+                        }
+                    } else {
+                        // Nếu là tin nhắn thường -> Hiện lên như cũ
+                        onMessageReceived(body);
+                    }
+                });
+
+            }, function(error) { alert("Lỗi kết nối: " + error); });
+        }
+
+        // --- TÍNH NĂNG MỚI: LOAD LỊCH SỬ CHAT ---
+       function enterChatRoom() {
+            var friendEmail = document.getElementById("recipientId").value;
+            var token = document.getElementById("jwtToken").value; // Lấy token
+
+            if(!friendEmail) { alert("Nhập email bạn bè vào đã bro!"); return; }
+
+            currentRecipient = friendEmail;
+            
+            // Update giao diện
+            document.getElementById("chatPanel").classList.remove("hidden");
+            document.getElementById("chatTitle").innerText = "Đang chat với: " + friendEmail;
+            document.getElementById("conversation").innerHTML = ""; 
+
+            // --- SỬA Ở ĐÂY: Thêm Header Authorization vào request ---
+            fetch(`http://localhost:8080/messages/${myEmail}/${friendEmail}`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': 'Bearer ' + token, // <--- CHÌA KHÓA Ở ĐÂY
+                    'Content-Type': 'application/json'
+                }
+            }) 
+            .then(response => {
+                if (!response.ok) { throw new Error("Lỗi HTTP: " + response.status); }
+                return response.json();
+            })
+            .then(messages => {
+                console.log("Lịch sử chat:", messages);
+                if (messages.length === 0) {
+                    console.log("Chưa có tin nhắn nào giữa 2 người này.");
+                }
+                messages.forEach(msg => {
+                    // Logic hiển thị: Nếu msg.senderId trùng với myEmail thì là 'me', ngược lại là 'other'
+                    showChatBubble(msg, msg.senderId === myEmail ? 'me' : 'other');
+                });
+            })
+            .catch(err => {
+                console.error("Lỗi load history:", err);
+                alert("Không load được tin nhắn cũ! Check Console F12 xem lỗi gì.");
+            });
+        }
+
+        function sendMessage() {
+            var content = document.getElementById("message").value;
+            if(!content || !currentRecipient) return;
+
+            var message = { recipientId: currentRecipient, content: content };
+
+            stompClient.send("/app/chat", {}, JSON.stringify(message));
+            
+            // Hiện ngay lên màn hình
+            showChatBubble({ senderId: myEmail, content: content }, 'me');
+            document.getElementById("message").value = "";
+        }
+
+        function requestDelete(msgId) {
+            if (!confirm("Muốn thu hồi tin nhắn này hả bro?")) return;
+
+            var token = document.getElementById("jwtToken").value;
+
+            fetch('http://localhost:8080/messages/' + msgId, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': 'Bearer ' + token
+                }
+            })
+            .then(response => {
+                if (response.ok) {
+                    console.log("Đã gửi lệnh xóa!");
+                    // Không cần xóa UI ở đây, đợi WebSocket trả về lệnh xóa rồi tự nó xóa
+                } else {
+                    alert("Lỗi không xóa được!");
+                }
+            })
+            .catch(err => console.error(err));
+        }
+        function onMessageReceived(msg) {
+            // Logic hiển thị thông minh:
+            // Chỉ hiện tin nhắn nếu nó đến từ người mình ĐANG CHAT cùng (currentRecipient)
+            if (msg.senderId === currentRecipient) {
+                showChatBubble(msg, 'other');
+            } else {
+                // Nếu đang chat với A mà B nhắn tới -> Thông báo nhẹ (Log hoặc Toast)
+                console.log("🔔 Có tin nhắn mới từ " + msg.senderId + " (Đang ẩn vì bạn không chat với họ)");
+                alert("🔔 " + msg.senderId + " vừa nhắn tin cho bạn!");
+            }
+        }
+
+       function showChatBubble(message, type) {
+            var box = document.getElementById("conversation");
+            
+            // Tạo div bao quanh
+            var div = document.createElement('div');
+            div.className = 'msg ' + (type === 'me' ? 'msg-me' : 'msg-other');
+            
+            // 🔥 QUAN TRỌNG: Gán ID cho thẻ div để lát tìm mà xóa
+            // ID sẽ có dạng: "msg-1", "msg-2"...
+            div.id = "msg-" + message.id; 
+
+            // Nội dung tin nhắn
+            var contentHtml = "<span>" + message.content + "</span>";
+            
+            // Nếu là tin mình gửi -> Thêm nút Xóa
+            if (type === 'me') {
+                // Nút xóa gọi hàm requestDelete
+                contentHtml += ` <button onclick="requestDelete(${message.id})" style="background:red; color:white; border:none; border-radius:50%; cursor:pointer; font-size:10px; margin-left:5px;">x</button>`;
+            }
+
+            div.innerHTML = contentHtml;
+            box.appendChild(div);
+            box.scrollTop = box.scrollHeight;
+        }
+
+        function handleEnter(e) { if(e.key === 'Enter') sendMessage(); }
+    </script>
+</body>
+</html>

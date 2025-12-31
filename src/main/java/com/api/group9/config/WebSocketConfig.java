@@ -15,19 +15,15 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     private AuthChannelInterceptorAdapter authInterceptor;
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-        // Đây là cái cổng để Android/Web kết nối vào (ws://localhost:8080/ws)
         registry.addEndpoint("/ws").setAllowedOriginPatterns("*").withSockJS();
     }
 
     @Override
     public void configureMessageBroker(MessageBrokerRegistry registry) {
-        // Prefix cho các tin nhắn gửi từ Client lên Server
         registry.setApplicationDestinationPrefixes("/app");
         
-        // Kích hoạt broker để đẩy tin về Client (dùng cho chat 1-1 và public)
         registry.enableSimpleBroker("/user");
         
-        // Prefix dành riêng cho user (để gửi tin nhắn riêng tư)
         registry.setUserDestinationPrefix("/user");
     }
 

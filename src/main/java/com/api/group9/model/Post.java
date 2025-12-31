@@ -8,7 +8,6 @@ import lombok.AllArgsConstructor;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 @Entity
@@ -31,8 +30,8 @@ public class Post {
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PostImage> images = new ArrayList<>(); 
 
-    @Transient
-    private Map<String, Integer> reactionCounts;
+    @Column(nullable = false)
+    private int likeCount = 0;
     
     @Column(nullable = false)
     private int commentCount = 0;
@@ -65,10 +64,9 @@ public class Post {
                      .collect(Collectors.toList());
     }
 
-    // 2. Hàm tiện ích để thêm ảnh vào list (Dùng trong Service)
     public void addImage(PostImage image) {
         images.add(image);
-        image.setPost(this); // Gắn ngược lại để Hibernate hiểu
+        image.setPost(this); 
     }
     
 }

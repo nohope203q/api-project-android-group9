@@ -37,7 +37,7 @@ public class AuthController {
     // 3. Đăng nhập
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest req) {
-        UserRespone user = authService.login(req);
+        UserResponse user = authService.login(req);
         return ResponseEntity.ok(new LoginResponse("success", "Login thành công", user.getAccessToken()));
     }
 

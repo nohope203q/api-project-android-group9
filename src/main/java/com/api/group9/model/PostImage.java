@@ -15,7 +15,7 @@ public class PostImage {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id; // Đây chính là cái Primary Key mà Database đang đòi
+    private Long id; 
 
     @Column(name = "image_url", nullable = false)
     private String imageUrl;

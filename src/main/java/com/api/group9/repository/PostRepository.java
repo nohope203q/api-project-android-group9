@@ -1,10 +1,18 @@
 package com.api.group9.repository;
 
+import com.api.group9.model.Post;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
 import java.util.List;
 
-import org.springframework.data.jpa.repository.JpaRepository;
-import com.api.group9.model.Post;
-
 public interface PostRepository extends JpaRepository<Post, Long> {
-    List<Post> findByContentContaining(String content);
+
+    // Query lấy News Feed: Bài của mình + Bài của danh sách bạn bè
+    // ORDER BY createdAt DESC (Mới nhất lên đầu)
+    @Query("SELECT p FROM Post p WHERE p.userId IN :userIds ORDER BY p.createdAt DESC")
+    Page<Post> findNewsFeed(@Param("userIds") List<Long> userIds, Pageable pageable);
 }

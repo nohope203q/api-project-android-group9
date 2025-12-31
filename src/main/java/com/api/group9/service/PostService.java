@@ -1,125 +1,165 @@
 package com.api.group9.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.access.AccessDeniedException;
 
 import com.api.group9.dto.Request.PostRequest;
+import com.api.group9.dto.Response.PostResponse;
 import com.api.group9.model.Post;
-import com.api.group9.model.PostImage; // Import Entity ảnh mới
+import com.api.group9.model.PostImage;
 import com.api.group9.model.User;
+import com.api.group9.model.FriendShip; // Import mới
 import com.api.group9.repository.PostRepository;
 import com.api.group9.repository.UserRepository;
+import com.api.group9.repository.FriendShipRepository; // Import mới
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 import java.util.NoSuchElementException;
 
 @Service
 public class PostService {
 
-    @Autowired
-    private PostRepository postRepository;
+    @Autowired private PostRepository postRepository;
+    @Autowired private UserRepository userRepository;
+    @Autowired private CloudinaryService cloudinaryService;
+    @Autowired private FriendShipRepository friendRepo; // 🔥 Inject thêm cái này để lấy bạn bè
 
-    @Autowired
-    private UserRepository userRepository;
+    // 🔥 Helper: Hàm chuyển từ Entity sang DTO
+    private PostResponse mapToResponse(Post post, User author) {
+        PostResponse response = new PostResponse();
+        response.setId(post.getId());
+        response.setContent(post.getContent());
+        response.setLocation(post.getLocation());
+        response.setPublic(post.isPublic());
+        response.setCreatedAt(post.getCreatedAt());
 
-    @Autowired
-    private CloudinaryService cloudinaryService;
+        // Map Author
+        response.setAuthorId(author.getId());
+        response.setAuthorName(author.getFullName());
+        response.setAuthorAvatar(author.getProfilePictureUrl());
 
-    public List<Post> getAllPosts() {
-        return postRepository.findAll();
+        // Map Images
+        List<String> urls = post.getImages().stream()
+                .map(PostImage::getImageUrl)
+                .collect(Collectors.toList());
+        response.setImageUrl(urls); // Lưu ý: Tên field bên DTO nên là imageUrls (số nhiều)
+
+        return response;
     }
 
-    public Post getPostById(Long id) {
-        return postRepository.findById(id)
-                .orElseThrow(() -> new NoSuchElementException("Post not found"));
+    // API cũ: Lấy tất cả (Dành cho tab Explore/Admin)
+    public Page<PostResponse> getAllPosts(int page, int size) {
+        PageRequest pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        return postRepository.findAll(pageable).map(post -> {
+            User author = userRepository.findById(post.getUserId()).orElse(new User());
+            return mapToResponse(post, author);
+        });
     }
 
-    // --- HÀM CREATE CHUẨN (Đã gộp và sửa logic ảnh) ---
-    public Post createPost(PostRequest request, List<MultipartFile> files) {
+    // 🔥 API MỚI: Lấy News Feed chuẩn Facebook (Bài của mình + Bạn bè)
+    public Page<PostResponse> getNewsFeed(int page, int size) {
+        // 1. Lấy User hiện tại
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        User me = userRepository.findByEmail(email).orElseThrow(() -> new NoSuchElementException("User not found"));
+
+        // 2. Lấy danh sách ID bạn bè (Từ bảng FriendShip)
+        List<FriendShip> friendships = friendRepo.findAllFriends(me);
+        
+        List<Long> userIds = new ArrayList<>();
+        userIds.add(me.getId()); // Thêm chính mình vào để xem bài mình đăng
+
+        for (FriendShip f : friendships) {
+            // Logic: Nếu mình là sender -> bạn là receiver, và ngược lại
+            User friend = f.getSender().getId().equals(me.getId()) ? f.getReceiver() : f.getSender();
+            userIds.add(friend.getId());
+        }
+
+        // 3. Query Repo lấy bài viết theo list ID (Mới nhất lên đầu)
+        PageRequest pageable = PageRequest.of(page, size); // Sort đã được xử lý trong câu @Query của Repository rồi
+        Page<Post> postsPage = postRepository.findNewsFeed(userIds, pageable);
+
+        // 4. Map sang DTO
+        return postsPage.map(post -> {
+            User author = userRepository.findById(post.getUserId()).orElse(new User());
+            return mapToResponse(post, author);
+        });
+    }
+
+    public PostResponse getPostById(Long id) {
+        Post post = postRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Post not found"));
+        User author = userRepository.findById(post.getUserId()).orElseThrow();
+        return mapToResponse(post, author);
+    }
+
+    public PostResponse createPost(PostRequest request, List<MultipartFile> files) {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        User author = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
         Post post = new Post();
-
-        // 1. Map dữ liệu text
         post.setContent(request.getContent());
         post.setLocation(request.getLocation());
         post.setPublic(request.isPublic());
-        // post.setMusicUrl(request.getMusicUrl());
-
-        // 2. Lấy User từ Token (Dùng Email)
-        String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        User author = userRepository.findByEmail(email)
-                .orElseThrow(() -> new NoSuchElementException("User not found with email: " + email));
-        
-        // Gán ID tác giả
         post.setUserId(author.getId());
+        // post.setCreatedAt(LocalDateTime.now()); // Entity tự handle hoặc set ở đây
 
-        // 3. Xử lý Upload ảnh (QUAN TRỌNG: Logic mới cho PostImage)
         if (files != null && !files.isEmpty()) {
-            List<PostImage> imageEntities = new ArrayList<>();
+            // Upload song song (Async)
+            List<CompletableFuture<PostImage>> futures = files.stream()
+                .map(file -> CompletableFuture.supplyAsync(() -> {
+                    try {
+                        String url = cloudinaryService.uploadImage(file);
+                        PostImage img = new PostImage();
+                        img.setImageUrl(url);
+                        img.setPost(post);
+                        return img;
+                    } catch (Exception e) {
+                        throw new RuntimeException("Lỗi upload ảnh");
+                    }
+                }))
+                .collect(Collectors.toList());
+
+            List<PostImage> images = futures.stream()
+                .map(CompletableFuture::join)
+                .collect(Collectors.toList());
             
-            for (MultipartFile file : files) {
-                try {
-                    // A. Upload lên Cloudinary
-                    String url = cloudinaryService.uploadImage(file);
-                    
-                    // B. Tạo Entity PostImage
-                    PostImage img = new PostImage();
-                    img.setImageUrl(url);
-                    img.setPost(post); // BẮT BUỘC: Gắn bài viết vào ảnh
-                    
-                    imageEntities.add(img);
-                } catch (IOException e) {
-                    System.err.println("Lỗi upload file: " + file.getOriginalFilename());
-                    e.printStackTrace();
-                }
-            }
-            // C. Đưa danh sách ảnh vào Post
-            post.setImages(imageEntities);
+            post.setImages(images);
         }
 
-        return postRepository.save(post);
-    }
-
-    // --- HÀM UPDATE ---
-    public Post updatePost(Long id, Post updatedPost) {
-        // 1. Tìm bài viết cũ
-        Post existingPost = postRepository.findById(id)
-                .orElseThrow(() -> new NoSuchElementException("Post not found"));
-
-        // 2. Kiểm tra quyền (Dùng Email để tìm User hiện tại)
-        String currentEmail = SecurityContextHolder.getContext().getAuthentication().getName();
-        User currentUser = userRepository.findByEmail(currentEmail)
-                .orElseThrow(() -> new NoSuchElementException("User not found"));
-
-        // So sánh ID người dùng
-        if (!existingPost.getUserId().equals(currentUser.getId())) {
-            throw new AccessDeniedException("Bạn không có quyền chỉnh sửa bài viết này");
-        }
-
-        // 3. Cập nhật dữ liệu
-        if (updatedPost.getContent() != null && !updatedPost.getContent().isEmpty()) {
-            existingPost.setContent(updatedPost.getContent());
-        }
-
-        if (updatedPost.getLocation() != null) {
-            existingPost.setLocation(updatedPost.getLocation());
-        }
-
-        existingPost.setPublic(updatedPost.isPublic());
-
-        // Lưu ý: Logic update ảnh thường phức tạp (xóa cũ thêm mới), 
-        // tạm thời chưa xử lý ở đây để tránh lỗi.
-
-        return postRepository.save(existingPost);
+        Post savedPost = postRepository.save(post);
+        return mapToResponse(savedPost, author);
     }
 
     public void deletePost(Long id) {
-        // Nên kiểm tra quyền trước khi xóa (tương tự update), nhưng tạm thời xóa luôn theo yêu cầu
-        Post post = getPostById(id);
+        Post post = postRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Post not found"));
+
+        String currentEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+        User currentUser = userRepository.findByEmail(currentEmail).orElseThrow();
+        
+        if (!post.getUserId().equals(currentUser.getId())) {
+             throw new AccessDeniedException("Không được xóa bài của người khác!");
+        }
+
+        if (post.getImages() != null) {
+            for (PostImage img : post.getImages()) {
+                try {
+                    cloudinaryService.deleteImageByUrl(img.getImageUrl());
+                } catch (Exception e) {
+                    System.err.println("Lỗi xóa ảnh trên Cloud: " + e.getMessage());
+                }
+            }
+        }
         postRepository.delete(post);
     }
 }

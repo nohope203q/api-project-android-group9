@@ -7,7 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.util.Map; 
+import java.util.Map;
 
 @Service
 public class CloudinaryService {
@@ -17,9 +17,28 @@ public class CloudinaryService {
 
     public String uploadImage(MultipartFile file) throws IOException {
         @SuppressWarnings("unchecked")
-        Map<String, Object> uploadResult = (Map<String, Object>) cloudinary.uploader().upload(file.getBytes(), ObjectUtils.emptyMap());
-        
+        Map<String, Object> uploadResult = (Map<String, Object>) cloudinary.uploader().upload(file.getBytes(),
+                ObjectUtils.emptyMap());
+
         // Lấy url ra và chuyển thành String
         return uploadResult.get("url").toString();
+    }
+
+    public void deleteImageByUrl(String imageUrl) throws IOException {
+
+        String publicId = extractPublicId(imageUrl);
+        if (publicId != null) {
+            cloudinary.uploader().destroy(publicId, ObjectUtils.emptyMap());
+        }
+    }
+
+    private String extractPublicId(String url) {
+        try {
+            int startIndex = url.lastIndexOf("/") + 1;
+            int endIndex = url.lastIndexOf(".");
+            return url.substring(startIndex, endIndex);
+        } catch (Exception e) {
+            return null;
+        }
     }
 }

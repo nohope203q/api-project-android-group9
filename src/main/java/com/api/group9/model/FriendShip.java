@@ -12,7 +12,7 @@ import java.time.Instant; // Dùng Instant
 })
 @Data
 @NoArgsConstructor
-public class Friend {
+public class FriendShip {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

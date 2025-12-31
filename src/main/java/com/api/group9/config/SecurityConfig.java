@@ -64,13 +64,13 @@ public class SecurityConfig {
         http
             .csrf(csrf -> csrf.disable())
             
-            // --- 2. Kích hoạt CORS sử dụng cái Bean vừa tạo bên trên ---
+            // Kích hoạt CORS sử dụng cái Bean vừa tạo bên trên
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             
             .authorizeHttpRequests(auth -> auth
-                // 1. Các API KHÔNG CẦN đăng nhập (Public)
+                // Các API KHÔNG CẦN đăng nhập (Public)
                 .requestMatchers(
                     "/auth/**",      
                     "/user/**",
@@ -78,7 +78,7 @@ public class SecurityConfig {
                     "/messages/**"   
                 ).permitAll()
                 
-                // 2. Các API còn lại bắt buộc phải có Token
+                // Các API còn lại bắt buộc phải có Token
                 .anyRequest().authenticated()
             );
 

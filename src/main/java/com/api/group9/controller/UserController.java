@@ -7,7 +7,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile; // Nhớ import cái này
 
-import com.api.group9.dto.Respone.UserProfileResponse;
+import com.api.group9.dto.Response.UserProfileResponse;
 import com.api.group9.model.User;
 import com.api.group9.repository.UserRepository;
 import com.api.group9.service.CloudinaryService; // Import Service vừa tạo
@@ -31,7 +31,6 @@ public class UserController {
         return ResponseEntity.ok().body(new UserProfileResponse(user));
     }
 
-    // Sửa method này để nhận File
     @PutMapping("/update")
     public ResponseEntity<?> updateUserProfile(
             @RequestParam(required = false) String fullName,
@@ -47,17 +46,17 @@ public class UserController {
             User currentUser = userRepository.findByUsernameOrEmail(currentPrincipalName, currentPrincipalName)
                     .orElseThrow(() -> new RuntimeException("Lỗi ảo ma: Token ngon nhưng user không thấy đâu!"));
 
-            // 1. Update text info
+            // Update text info
             if (fullName != null) currentUser.setFullName(fullName);
             if (bio != null) currentUser.setBio(bio);
 
-            // 2. Xử lý ảnh đại diện (Nếu có gửi lên thì mới up)
+            // Xử lý ảnh đại diện (Nếu có gửi lên thì mới up)
             if (profilePictureUrl != null && !profilePictureUrl.isEmpty()) {
                 String avatarUrl = cloudinaryService.uploadImage(profilePictureUrl);
                 currentUser.setProfilePictureUrl(avatarUrl); // Lưu link vào DB
             }
 
-            // 3. Xử lý ảnh bìa
+            // Xử lý ảnh bìa
             if (coverUrl != null && !coverUrl.isEmpty()) {
                 String coverUrlString = cloudinaryService.uploadImage(coverUrl);
                 currentUser.setCoverUrl(coverUrlString); // Lưu link vào DB

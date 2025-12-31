@@ -1,4 +1,4 @@
-package com.api.group9.dto.Respone;
+package com.api.group9.dto.Response;
 import lombok.Data;
 @Data
 public class UserRespone {

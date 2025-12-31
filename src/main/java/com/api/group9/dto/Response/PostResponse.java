@@ -17,4 +17,8 @@ public class PostResponse {
     private String authorAvatar;
 
     private List<String> imageUrl;
+
+    private int likeCount;      
+    private int commentCount;   
+    private boolean isLikedByCurrentUser;
 }

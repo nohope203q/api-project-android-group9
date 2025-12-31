@@ -10,9 +10,6 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 
 public interface PostRepository extends JpaRepository<Post, Long> {
-
-    // Query lấy News Feed: Bài của mình + Bài của danh sách bạn bè
-    // ORDER BY createdAt DESC (Mới nhất lên đầu)
     @Query("SELECT p FROM Post p WHERE p.userId IN :userIds ORDER BY p.createdAt DESC")
     Page<Post> findNewsFeed(@Param("userIds") List<Long> userIds, Pageable pageable);
 }

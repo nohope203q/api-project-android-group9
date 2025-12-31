@@ -47,7 +47,7 @@ public class AuthService {
         return new RegisterResponse("success", "Đăng ký thành công. Kiểm tra email lấy OTP.");
     }
 
-    public UserRespone login(LoginRequest req) {
+    public UserResponse login(LoginRequest req) {
         User user = userRepository.findByEmail(req.getEmail())
                 .orElseThrow(() -> new RuntimeException("Sai email hoặc mật khẩu."));
 
@@ -61,7 +61,7 @@ public class AuthService {
         String token = jwtService.generateToken(user);
         
         // Builder pattern hoặc Set thủ công (Nên dùng Mapper như MapStruct nếu dự án lớn)
-        UserRespone res = new UserRespone();
+        UserResponse res = new UserResponse();
         res.setAccessToken(token);
         res.setId(user.getId());
         res.setUsername(user.getUsername());

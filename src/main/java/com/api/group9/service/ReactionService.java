@@ -8,12 +8,16 @@ import org.springframework.transaction.annotation.Transactional;
 import com.api.group9.model.Post;
 import com.api.group9.model.Reaction;
 import com.api.group9.model.User;
-import com.api.group9.enums.ReactionType; // Import Enum
+import com.api.group9.dto.Response.ReactionResponse;
+import com.api.group9.dto.Response.UserLikerResponse;
+import com.api.group9.enums.ReactionType; // Đảm bảo import đúng Enum
 import com.api.group9.repository.PostRepository;
 import com.api.group9.repository.ReactionRepository;
 import com.api.group9.repository.UserRepository;
 
+import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.stream.Collectors;
 
 @Service
 public class ReactionService {
@@ -27,45 +31,81 @@ public class ReactionService {
 
     @Transactional
     public Reaction likePost(Long postId) {
-        // 1. Lấy Post từ DB (để gán vào Reaction)
+        // 1. Lấy Post từ DB
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new NoSuchElementException("Post not found"));
 
-        // 2. Lấy User hiện tại
-        String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        User user = userRepository.findByUsername(username)
+        // 2. Lấy User hiện tại (SỬA: Dùng Email thay vì Username)
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new NoSuchElementException("User not found"));
 
-        // 3. Kiểm tra tồn tại bằng đối tượng (Entity)
+        // 3. Kiểm tra tồn tại
         if (reactionRepository.existsByPostAndUser(post, user)) {
-            throw new IllegalStateException("Already liked this post");
+            throw new IllegalStateException("Bạn đã like bài viết này rồi");
         }
 
-        // 4. Tạo Reaction bằng Constructor mới & Enum
+        // 4. Tạo Reaction
         Reaction reaction = new Reaction(post, user, ReactionType.LIKE);
-        
-        return reactionRepository.save(reaction);
+        Reaction savedReaction = reactionRepository.save(reaction);
+
+        // 5. CẬP NHẬT SỐ LƯỢNG LIKE VÀO POST (Quan trọng)
+        post.setLikeCount(post.getLikeCount() + 1);
+        postRepository.save(post);
+
+        return savedReaction;
     }
 
     @Transactional
     public void unlikePost(Long postId) {
-        String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        User user = userRepository.findByUsername(username)
+        // 1. Lấy User hiện tại (SỬA: Dùng Email)
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new NoSuchElementException("User not found"));
 
-        // Cần lấy Post để tìm Reaction theo cặp (Post, User)
+        // 2. Lấy Post
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new NoSuchElementException("Post not found"));
 
-        // Tìm reaction dựa trên Entity
+        // 3. Tìm reaction để xóa
         Reaction reaction = reactionRepository.findByPostAndUser(post, user)
-                .orElseThrow(() -> new NoSuchElementException("Reaction not found"));
+                .orElseThrow(() -> new NoSuchElementException("Bạn chưa like bài viết này"));
 
+        // 4. Xóa Reaction
         reactionRepository.delete(reaction);
+
+        // 5. CẬP NHẬT SỐ LƯỢNG LIKE VÀO POST (Quan trọng)
+        // Dùng Math.max để đảm bảo không bao giờ bị âm
+        post.setLikeCount(Math.max(0, post.getLikeCount() - 1));
+        postRepository.save(post);
     }
 
+    // Hàm tiện ích đếm số lượng (nếu cần check chéo)
     public long countReactions(Long postId) {
-        // JPA tự động hiểu PostId là tìm theo field id của object Post
         return reactionRepository.countByPostId(postId);
+    }
+    public ReactionResponse getReactionStatus(Long postId) {
+        // Lấy số lượng
+        long count = reactionRepository.countByPostId(postId);
+        
+        // Kiểm tra User hiện tại có like không
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        User currentUser = userRepository.findByEmail(email).orElseThrow();
+        Post post = postRepository.findById(postId).orElseThrow();
+        
+        boolean isLiked = reactionRepository.existsByPostAndUser(post, currentUser);
+
+        return new ReactionResponse(postId, (int) count, isLiked, "Success");
+    }
+
+    // 2. Hàm mới: Lấy danh sách người like (Cho API Get List)
+    public List<UserLikerResponse> getListLikers(Long postId) {
+        // Lấy list User từ Repository (Query cũ giữ nguyên)
+        List<User> users = reactionRepository.findUsersByPostId(postId);
+        
+        // Map sang DTO chỉ có id và fullname
+        return users.stream().map(user -> {
+            return new UserLikerResponse(user.getId(), user.getFullName());
+        }).collect(Collectors.toList());
     }
 }

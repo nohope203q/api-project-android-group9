@@ -12,10 +12,10 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.web.cors.CorsConfiguration; // <--- Import mới
-import org.springframework.web.cors.CorsConfigurationSource; // <--- Import mới
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource; // <--- Import mới
-import java.util.Arrays; // <--- Import mới
+import org.springframework.web.cors.CorsConfiguration; 
+import org.springframework.web.cors.CorsConfigurationSource; 
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource; 
+import java.util.Arrays; 
 
 @Configuration
 @EnableWebSecurity
@@ -72,10 +72,10 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 // 1. Các API KHÔNG CẦN đăng nhập (Public)
                 .requestMatchers(
-                    "/auth/**",      // Gom gọn mấy cái auth lại
+                    "/auth/**",      
                     "/user/**",
-                    "/ws/**",        // WebSocket
-                    "/messages/**"   // <--- MỞ THÊM CÁI NÀY ĐỂ HTML LOAD LỊCH SỬ CHAT ĐƯỢC
+                    "/ws/**",        
+                    "/messages/**"   
                 ).permitAll()
                 
                 // 2. Các API còn lại bắt buộc phải có Token

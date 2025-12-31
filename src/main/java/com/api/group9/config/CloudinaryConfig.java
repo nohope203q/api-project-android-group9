@@ -10,7 +10,6 @@ import com.cloudinary.utils.ObjectUtils;
 @Configuration 
 public class CloudinaryConfig {
 
-    // Hút giá trị từ application.properties vào đây
     @Value("${cloudinary.cloud-name}")
     private String cloudName;
 

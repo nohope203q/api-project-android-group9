@@ -1,7 +1,7 @@
 package com.api.group9.service;
 
 import com.api.group9.dto.Request.*;
-import com.api.group9.dto.Respone.*;
+import com.api.group9.dto.Response.*;
 import com.api.group9.model.OtpCode;
 import com.api.group9.model.User;
 import com.api.group9.repository.OtpCodeRepository;

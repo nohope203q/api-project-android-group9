@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import com.api.group9.model.Message;
 import com.api.group9.repository.MessageRepository;
 
-import java.security.Principal; // Nhớ import cái này
+import java.security.Principal; 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,21 +27,20 @@ public class ChatController {
     @Autowired
     private MessageRepository messageRepository;
 
-    // --- SỬA ĐOẠN NÀY ---
     @MessageMapping("/chat")
     public void processMessage(@Payload Message chatMessage, Principal principal) {
         
-        // 1. Lấy User từ Principal (Cái này do Interceptor đã set từ Token)
+        // Lấy User từ Principal (Cái này do Interceptor đã set từ Token)
         // Nếu Token chứa Email thì cái này trả về Email
         String currentUsername = principal.getName();
         
-        // 2. Gán ngược lại vào tin nhắn trước khi lưu
+        // Gán ngược lại vào tin nhắn trước khi lưu
         chatMessage.setSenderId(currentUsername);
 
-        // 3. Lưu vào DB (Giờ thì sender_id đã có dữ liệu rồi nhé)
+        // Lưu vào DB (Giờ thì sender_id đã có dữ liệu rồi nhé)
         Message savedMsg = messageRepository.save(chatMessage);
 
-        // 4. Gửi cho người nhận
+        // Gửi cho người nhận
         messagingTemplate.convertAndSendToUser(
             chatMessage.getRecipientId(), 
             "/queue/messages", 
@@ -63,22 +62,21 @@ public class ChatController {
 
     @DeleteMapping("/messages/{id}")
     public ResponseEntity<?> deleteMessage(@PathVariable Long id, Principal principal) {
-        // 1. Tìm tin nhắn trong DB
+        // Tìm tin nhắn trong DB
         Message msg = messageRepository.findById(id).orElse(null);
         if (msg == null) return ResponseEntity.notFound().build();
 
-        // 2. Kiểm tra chính chủ (Chỉ người gửi mới được xóa)
-        // principal.getName() trả về Email (do mầy config lúc nãy)
+        // Kiểm tra chính chủ (Chỉ người gửi mới được xóa)
         if (!msg.getSenderId().equals(principal.getName())) {
             return ResponseEntity.status(403).body("Không phải tin của mầy mà đòi xóa!");
         }
 
-        // 3. Xóa trong Database
+        // Xóa trong Database
         messageRepository.delete(msg);
 
-        // 4. Bắn tín hiệu WebSocket cho cả 2 thằng để cập nhật giao diện ngay lập tức
+        // Bắn tín hiệu WebSocket cho cả 2 thằng để cập nhật giao diện ngay lập tức
         Map<String, Object> payload = new HashMap<>();
-        payload.put("type", "DELETE"); // Đánh dấu đây là lệnh xóa
+        payload.put("type", "DELETE"); 
         payload.put("messageId", id);
 
         // Gửi cho người nhận (để bên đó tự mất tin nhắn)

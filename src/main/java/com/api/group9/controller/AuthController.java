@@ -1,7 +1,7 @@
 package com.api.group9.controller;
 
 import com.api.group9.dto.Request.*;
-import com.api.group9.dto.Respone.*;
+import com.api.group9.dto.Response.*;
 import com.api.group9.model.OtpCode;
 import com.api.group9.service.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,8 +38,6 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest req) {
         UserRespone user = authService.login(req);
-        // Token đã được tạo trong service hoặc tạo ở đây tùy logic
-        // Ở đây giả sử service trả về UserRespone có sẵn token
         return ResponseEntity.ok(new LoginResponse("success", "Login thành công", user.getAccessToken()));
     }
 
@@ -50,7 +48,6 @@ public class AuthController {
             return ResponseEntity.badRequest().body(Map.of("error", "Vui lòng chọn loại OTP (purpose)"));
         }
 
-        // Gọi service với email và purpose động
         authService.sendOtp(req.getEmail(), req.getPurpose());
 
         return ResponseEntity.ok(Map.of("message", "Đã gửi OTP cho mục đích: " + req.getPurpose()));
@@ -84,9 +81,6 @@ public class AuthController {
     // 8. Đổi mật khẩu - Bước 2: Confirm
     @PostMapping("/change-password")
     public ResponseEntity<?> changePassword(@RequestBody ResetPasswordRequest req) {
-        // Lưu ý: Client vẫn phải gửi email trong body để khớp với logic service,
-        // hoặc mầy có thể overload hàm service để chỉ nhận pass + code nếu muốn bảo mật
-        // tận răng.
         authService.processPasswordReset(req.getEmail(), req.getOtpCode(), req.getNewPassword(),
                 OtpCode.OtpPurpose.CHANGE_PASSWORD);
         return ResponseEntity.ok(Map.of("message", "Đổi mật khẩu thành công."));

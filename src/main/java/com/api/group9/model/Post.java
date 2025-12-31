@@ -58,10 +58,6 @@ public class Post {
         this.updatedAt = LocalDateTime.now();
     }
 
-    // --- Helper Methods để Frontend vẫn nhận được List String ---
-    
-    // 1. Getter giả: Trả về List<String> URL từ List<PostImage>
-    // Frontend gọi api sẽ thấy field "imageUrls": ["http...", "http..."]
     public List<String> getImageUrls() {
         if (images == null) return new ArrayList<>();
         return images.stream()

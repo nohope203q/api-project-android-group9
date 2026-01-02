@@ -104,7 +104,6 @@ public class PostService {
             // Kiểm tra trong bảng reactions xem cặp (postId, userId) có tồn tại không
             boolean isLiked = reactionRepository.existsByPostAndUser(post, me);
             
-            // Gán kết quả vào DTO để Frontend hiển thị (nút like sáng/tối)
             response.setLikedByCurrentUser(isLiked);
             // ------------------------------------
 

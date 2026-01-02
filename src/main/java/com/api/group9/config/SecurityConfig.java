@@ -37,21 +37,16 @@ public class SecurityConfig {
         return config.getAuthenticationManager();
     }
 
-    // --- 1. Tạo Bean cấu hình CORS ở đây ---
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         
-        // Cho phép tất cả các nguồn (bao gồm cả file HTML chạy trực tiếp)
         configuration.setAllowedOriginPatterns(Arrays.asList("*")); 
         
-        // Cho phép tất cả các method (GET, POST, PUT, DELETE, OPTIONS)
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         
-        // Cho phép tất cả các header (Authorization, Content-Type...)
         configuration.setAllowedHeaders(Arrays.asList("*"));
         
-        // Cho phép gửi kèm credentials (quan trọng cho WebSocket/Auth)
         configuration.setAllowCredentials(true);
         
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
@@ -64,21 +59,17 @@ public class SecurityConfig {
         http
             .csrf(csrf -> csrf.disable())
             
-            // Kích hoạt CORS sử dụng cái Bean vừa tạo bên trên
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             
             .authorizeHttpRequests(auth -> auth
-                // Các API KHÔNG CẦN đăng nhập (Public)
                 .requestMatchers(
                     "/auth/**",      
                     "/user/**",
                     "/ws/**",        
                     "/messages/**"   
                 ).permitAll()
-                
-                // Các API còn lại bắt buộc phải có Token
                 .anyRequest().authenticated()
             );
 

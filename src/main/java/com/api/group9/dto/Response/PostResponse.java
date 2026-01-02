@@ -18,7 +18,7 @@ public class PostResponse {
 
     private List<String> imageUrl;
 
-    private int likeCount;      
+    private int likeCount;
     private int commentCount;   
     private boolean isLikedByCurrentUser;
 }

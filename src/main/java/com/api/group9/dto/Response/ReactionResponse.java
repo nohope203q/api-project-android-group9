@@ -10,6 +10,5 @@ import lombok.NoArgsConstructor;
 public class ReactionResponse {
     private Long postId;
     private int likeCount;      
-    private boolean isLiked;    
-    private String message;    
+    private boolean isLikedByCurrentUser;    
 }

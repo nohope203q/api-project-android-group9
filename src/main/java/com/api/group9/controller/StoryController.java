@@ -9,7 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-
+import java.util.stream.Collectors;
 import java.security.Principal;
 
 @RestController
@@ -60,6 +60,24 @@ public class StoryController {
             } catch (Exception e) {
                 return ResponseEntity.status(500).body("Lỗi upload: " + e.getMessage());
             }
+    }
+
+    @GetMapping("/feed")
+    public ResponseEntity<?> getActiveStories() {
+        try {
+            java.time.LocalDateTime now = java.time.LocalDateTime.now();
+
+            java.util.List<Story> stories = storyRepository.findAll().stream()
+                    .filter(s -> s.getExpiredAt() != null && s.getExpiredAt().isAfter(now))
+                    .collect(Collectors.toList());;
+
+            java.util.List<com.api.group9.dto.Response.StoryResponse> response = stories.stream()
+                    .map(com.api.group9.dto.Response.StoryResponse::new)
+                    .collect(Collectors.toList());
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Lỗi tải story: " + e.getMessage());
+        }
     }
 
     // --- THÊM HÀM XÓA Ở ĐÂY ---

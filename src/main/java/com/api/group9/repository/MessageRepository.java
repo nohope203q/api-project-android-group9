@@ -8,4 +8,6 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
     List<Message> findBySenderIdAndRecipientIdOrSenderIdAndRecipientIdOrderByTimestampAsc(
         String senderId1, String recipientId1, String senderId2, String recipientId2
     );
+
+    List<Message> findBySenderIdOrRecipientIdOrderByTimestampDesc(String senderId, String recipientId);
 }

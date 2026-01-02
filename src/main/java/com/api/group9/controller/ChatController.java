@@ -13,10 +13,13 @@ import org.springframework.web.bind.annotation.PathVariable;
 import com.api.group9.model.Message;
 import com.api.group9.repository.MessageRepository;
 
-import java.security.Principal; 
+import java.security.Principal;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @Controller
 public class ChatController {
@@ -90,5 +93,32 @@ public class ChatController {
         );
 
         return ResponseEntity.ok().build();
+    }
+
+
+    @GetMapping("/conversations")
+    public ResponseEntity<List<Message>> getRecentConversations(Principal principal) {
+        // Lấy tên người dùng hiện tại
+        String currentUser = principal.getName();
+        
+        // 1. Lấy tất cả tin nhắn liên quan đến mình (mới nhất nằm đầu)
+        List<Message> allMessages = messageRepository.findBySenderIdOrRecipientIdOrderByTimestampDesc(currentUser, currentUser);
+        
+        // 2. Lọc thủ công bằng Java để lấy tin nhắn cuối cùng của từng người
+        List<Message> recentChats = new ArrayList<>();
+        Set<String> talkedToUsers = new HashSet<>(); // Set dùng để lưu những người đã add vào list rồi
+
+        for (Message msg : allMessages) {
+            // Xác định xem "đối phương" là ai
+            String partnerId = msg.getSenderId().equals(currentUser) ? msg.getRecipientId() : msg.getSenderId();
+
+            // Nếu chưa gặp người này trong vòng lặp thì đây là tin nhắn mới nhất
+            if (!talkedToUsers.contains(partnerId)) {
+                recentChats.add(msg);         // Thêm tin nhắn vào danh sách trả về
+                talkedToUsers.add(partnerId); // Đánh dấu là đã lấy tin của người này rồi
+            }
+        }
+
+        return ResponseEntity.ok(recentChats);
     }
 }

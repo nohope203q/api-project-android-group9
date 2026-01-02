@@ -12,7 +12,7 @@ import java.util.List;
 public interface PostRepository extends JpaRepository<Post, Long> {
 
     @Query(value = "SELECT p FROM Post p " +
-        "LEFT JOIN FETCH p.user " +  // Chỉ cần Fetch User thôi
+        "LEFT JOIN FETCH p.user " +  
         "WHERE p.userId IN :userIds " +
         "ORDER BY p.createdAt DESC",
         countQuery = "SELECT COUNT(p) FROM Post p WHERE p.userId IN :userIds")

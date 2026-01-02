@@ -6,8 +6,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import com.api.group9.dto.Response.ReactionResponse; // Import DTO mới
-import com.api.group9.dto.Response.UserLikerResponse;
+import com.api.group9.dto.Response.ReactionResponse;
+import com.api.group9.dto.Response.UserResponse;
 import com.api.group9.service.ReactionService;
 
 @RestController
@@ -28,8 +28,8 @@ public class ReactionController {
     // API 2: Lấy danh sách chi tiết người đã like
     // URL: GET /api/posts/{id}/reactions/list
     @GetMapping("/list")
-    public ResponseEntity<List<UserLikerResponse>> getListLikers(@PathVariable Long postId) {
-        List<UserLikerResponse> likers = reactionService.getListLikers(postId);
+    public ResponseEntity<List<UserResponse>> getListLikers(@PathVariable Long postId) {
+        List<UserResponse> likers = reactionService.getListLikers(postId);
         return ResponseEntity.ok(likers);
     }
 
@@ -45,11 +45,10 @@ public class ReactionController {
             return ResponseEntity.ok(new ReactionResponse(
                 postId, 
                 (int) newCount, 
-                true, // isLiked = true
-                "Like thành công"
+                true    
             ));
             
-        } catch (IllegalStateException e) {
+        } catch (IllegalStateException e) { 
             return ResponseEntity.status(409).body(e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -68,8 +67,7 @@ public class ReactionController {
             return ResponseEntity.ok(new ReactionResponse(
                 postId, 
                 (int) newCount, 
-                false, // isLiked = false
-                "Bỏ like thành công"
+                false
             ));
             
         } catch (Exception e) {

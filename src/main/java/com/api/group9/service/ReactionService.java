@@ -9,7 +9,7 @@ import com.api.group9.model.Post;
 import com.api.group9.model.Reaction;
 import com.api.group9.model.User;
 import com.api.group9.dto.Response.ReactionResponse;
-import com.api.group9.dto.Response.UserLikerResponse;
+import com.api.group9.dto.Response.UserResponse;
 import com.api.group9.enums.ReactionType; // Đảm bảo import đúng Enum
 import com.api.group9.repository.PostRepository;
 import com.api.group9.repository.ReactionRepository;
@@ -95,17 +95,20 @@ public class ReactionService {
         
         boolean isLiked = reactionRepository.existsByPostAndUser(post, currentUser);
 
-        return new ReactionResponse(postId, (int) count, isLiked, "Success");
+        return new ReactionResponse(postId, (int) count, isLiked);
     }
 
     // 2. Hàm mới: Lấy danh sách người like (Cho API Get List)
-    public List<UserLikerResponse> getListLikers(Long postId) {
+    public List<UserResponse> getListLikers(Long postId) {
         // Lấy list User từ Repository (Query cũ giữ nguyên)
         List<User> users = reactionRepository.findUsersByPostId(postId);
         
         // Map sang DTO chỉ có id và fullname
         return users.stream().map(user -> {
-            return new UserLikerResponse(user.getId(), user.getFullName());
+            UserResponse ur = new UserResponse();
+            ur.setId(user.getId());
+            ur.setFullName(user.getFullName());
+            return ur;
         }).collect(Collectors.toList());
     }
 }

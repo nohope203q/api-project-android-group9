@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
+import org.hibernate.annotations.BatchSize; // Import thêm cái này để tối ưu ảnh
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -20,14 +21,17 @@ public class Post {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
     @Column(name = "user_id", nullable = false)
     private Long userId;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", insertable = false, updatable = false) 
+    private User user;
     @Column(columnDefinition = "TEXT")
     private String content;
 
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
+    @BatchSize(size = 10) // <--- Thêm dòng này để load ảnh nhanh hơn, tránh N+1
     private List<PostImage> images = new ArrayList<>(); 
 
     @Column(nullable = false)
@@ -60,13 +64,12 @@ public class Post {
     public List<String> getImageUrls() {
         if (images == null) return new ArrayList<>();
         return images.stream()
-                     .map(PostImage::getImageUrl)
-                     .collect(Collectors.toList());
+                      .map(PostImage::getImageUrl)
+                      .collect(Collectors.toList());
     }
 
     public void addImage(PostImage image) {
         images.add(image);
         image.setPost(this); 
     }
-    
 }

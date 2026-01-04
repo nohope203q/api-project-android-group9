@@ -1,72 +1,56 @@
 package com.api.group9.controller;
 
+import com.api.group9.dto.Response.UserProfileResponse;
+import com.api.group9.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile; // Nhớ import cái này
-
-import com.api.group9.dto.Response.UserProfileResponse;
-import com.api.group9.model.User;
-import com.api.group9.repository.UserRepository;
-import com.api.group9.service.CloudinaryService; // Import Service vừa tạo
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.security.Principal;
 
 @RestController
 @RequestMapping("/user")
 public class UserController {
 
     @Autowired
-    private UserRepository userRepository;
-
-    @Autowired
-    private CloudinaryService cloudinaryService; // Inject service vào
+    private UserService userService;
 
     @GetMapping("/profile/{identifier}")
     public ResponseEntity<?> getUserProfile(@PathVariable String identifier) {
-        User user = userRepository.findByUsernameOrEmail(identifier, identifier)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy user nào trùng khớp bro ơi!"));
-        return ResponseEntity.ok().body(new UserProfileResponse(user));
+        try {
+            UserProfileResponse response = userService.getUserProfile(identifier);
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
     @PutMapping("/update")
     public ResponseEntity<?> updateUserProfile(
             @RequestParam(required = false) String fullName,
             @RequestParam(required = false) String bio,
-            @RequestParam(required = false) MultipartFile profilePictureUrl, // File ảnh đại diện
-            @RequestParam(required = false) MultipartFile coverUrl    // File ảnh bìa
+            @RequestParam(required = false) MultipartFile profilePictureUrl,
+            @RequestParam(required = false) MultipartFile coverUrl,
+            Principal principal // Lấy thông tin người dùng từ Token
     ) {
-        
         try {
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            String currentPrincipalName = authentication.getName();
-
-            User currentUser = userRepository.findByUsernameOrEmail(currentPrincipalName, currentPrincipalName)
-                    .orElseThrow(() -> new RuntimeException("Lỗi ảo ma: Token ngon nhưng user không thấy đâu!"));
-
-            // Update text info
-            if (fullName != null) currentUser.setFullName(fullName);
-            if (bio != null) currentUser.setBio(bio);
-
-            // Xử lý ảnh đại diện (Nếu có gửi lên thì mới up)
-            if (profilePictureUrl != null && !profilePictureUrl.isEmpty()) {
-                String avatarUrl = cloudinaryService.uploadImage(profilePictureUrl);
-                currentUser.setProfilePictureUrl(avatarUrl); // Lưu link vào DB
-            }
-
-            // Xử lý ảnh bìa
-            if (coverUrl != null && !coverUrl.isEmpty()) {
-                String coverUrlString = cloudinaryService.uploadImage(coverUrl);
-                currentUser.setCoverUrl(coverUrlString); // Lưu link vào DB
-            }
+            // Controller chỉ việc lấy tên User từ Principal và chuyển hết data sang Service xử lý
+            UserProfileResponse response = userService.updateUserProfile(
+                principal.getName(), 
+                fullName, 
+                bio, 
+                profilePictureUrl, 
+                coverUrl
+            );
             
-            userRepository.save(currentUser);
-            return ResponseEntity.ok().body(new UserProfileResponse(currentUser));
+            return ResponseEntity.ok(response);
 
         } catch (IOException e) {
             return ResponseEntity.badRequest().body("Lỗi upload ảnh rồi bro: " + e.getMessage());
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 }

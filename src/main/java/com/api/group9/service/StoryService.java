@@ -26,8 +26,8 @@ public class StoryService {
     private CloudinaryService cloudinaryService;
 
     // Logic tạo Story
-    public void createStory(String email, MultipartFile file, String caption, 
-                            String musicUrl, String musicTitle, String artistName) throws Exception {
+    public void createStory(String email, MultipartFile file, String caption
+                           ) throws Exception {
         
         User user = userRepository.findByEmail(email).orElseThrow();
         Story story = new Story();

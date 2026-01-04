@@ -18,13 +18,10 @@ public class StoryController {
     public ResponseEntity<?> createStory(
             @RequestParam("file") MultipartFile file,
             @RequestParam(value = "caption", required = false) String caption,
-            @RequestParam(value = "musicUrl", required = false) String musicUrl,
-            @RequestParam(value = "musicTitle", required = false) String musicTitle,
-            @RequestParam(value = "artistName", required = false) String artistName,
             Principal principal) {
             
         try {
-            storyService.createStory(principal.getName(), file, caption, musicUrl, musicTitle, artistName);
+            storyService.createStory(principal.getName(), file, caption);
             return ResponseEntity.ok("Đăng story thành công!");
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Lỗi upload: " + e.getMessage());

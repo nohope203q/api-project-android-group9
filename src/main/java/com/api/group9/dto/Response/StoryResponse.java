@@ -7,7 +7,7 @@ import com.api.group9.model.Story;
 public class StoryResponse {
     private Long id;
     private Long userId;
-    private String username;
+    private String fullName;
     private String userAvatar;
     
     private String mediaUrl; 
@@ -15,13 +15,12 @@ public class StoryResponse {
     private String mediaType; 
 
     private String caption;
-    private boolean isSeen; 
 
     public StoryResponse(Story story) {
         this.id = story.getId();
         if (story.getUser() != null) {
             this.userId = story.getUser().getId();
-            this.username = story.getUser().getFullName(); 
+            this.fullName=story.getUser().getFullName(); 
             this.userAvatar = story.getUser().getProfilePictureUrl(); 
         }
 
@@ -35,6 +34,5 @@ public class StoryResponse {
         }
 
         this.caption = story.getCaption();
-        this.isSeen = false;
     }
 }

@@ -16,12 +16,15 @@ public class StoryResponse {
 
     private String caption;
 
+    private String email;
+
     public StoryResponse(Story story) {
         this.id = story.getId();
         if (story.getUser() != null) {
             this.userId = story.getUser().getId();
             this.fullName=story.getUser().getFullName(); 
             this.userAvatar = story.getUser().getProfilePictureUrl(); 
+            this.email = story.getUser().getEmail();
         }
 
         // Map dữ liệu Media

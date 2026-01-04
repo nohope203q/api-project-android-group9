@@ -33,9 +33,6 @@ public class StoryService {
         Story story = new Story();
         story.setUser(user);
         story.setCaption(caption);
-        story.setMusicUrl(musicUrl);
-        story.setMusicTitle(musicTitle);
-        story.setArtistName(artistName);
 
         String contentType = file.getContentType();
         String uploadedUrl = "";
@@ -52,7 +49,6 @@ public class StoryService {
         storyRepository.save(story);
     }
 
-    // Logic lấy Feed (Giữ nguyên logic findAll + filter stream của bạn)
     public List<StoryResponse> getActiveStories() {
         LocalDateTime now = LocalDateTime.now();
 

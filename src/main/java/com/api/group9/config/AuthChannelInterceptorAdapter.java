@@ -38,28 +38,35 @@ public class AuthChannelInterceptorAdapter implements ChannelInterceptor {
                     
                     System.out.println(">>> 2. Token nhận được: " + token.substring(0, 10) + "...");
 
-                    String userEmail = jwtService.extractUsername(token);
+                    // --- SỬA CHỖ NÀY ---
+                    // Dùng extractEmail để lấy email từ claim "email" thay vì lấy từ subject (ID)
+                    String userEmail = jwtService.extractEmail(token); 
                     System.out.println(">>> 3. Email trong token: " + userEmail);
 
                     if (userEmail != null) {
+                        // Load user từ DB bằng Email (cái này vẫn giữ nguyên)
                         UserDetails userDetails = userDetailsService.loadUserByUsername(userEmail);
                         System.out.println(">>> 5. Tìm thấy User: " + userDetails.getUsername());
 
                         if (jwtService.isTokenValid(token, userDetails)) {
                             
+                            // Tạo đối tượng xác thực
+                            // Lưu ý: Param đầu tiên (Principal) nên để là userDetails hoặc userEmail
                             UsernamePasswordAuthenticationToken authentication = 
-                                    new UsernamePasswordAuthenticationToken(userEmail, null, userDetails.getAuthorities());
+                                    new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
                             
                             accessor.setUser(authentication);
                             SecurityContextHolder.getContext().setAuthentication(authentication);
                             
-                            System.out.println(">>> THÀNH CÔNG: User " + userEmail + " đã được cấp quyền!");
+                            System.out.println(">>> THÀNH CÔNG: User " + userEmail + " đã được cấp quyền WebSocket!");
                         } else {
                             System.out.println(">>> Token không hợp lệ!");
                             return null;
                         }
                     }
                 } else {
+                    // Không có header Authorization
+                    System.out.println(">>> WebSocket: Không tìm thấy Header Authorization");
                     return null;
                 }
             } catch (Exception e) {

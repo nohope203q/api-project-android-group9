@@ -22,13 +22,16 @@ public class JwtService {
     @Value("${application.security.jwt.expiration}")
     private long jwtExpiration;
 
-    // --- 1. SỬA QUAN TRỌNG: Lưu Email vào Subject ---
+    // --- 1. SỬA LẠI: Lưu ID vào Subject, Email đẩy xuống Claims ---
     public String generateToken(User user) {
         return Jwts.builder()
-                .subject(user.getEmail()) // <--- SỬA THÀNH GET EMAIL
+                // CHỖ NÀY QUAN TRỌNG: Đổi thành ID (ép kiểu về String)
+                .subject(String.valueOf(user.getId())) 
                 
-                // Thêm ID và Tên vào payload để Frontend dùng nếu cần
-                .claim("userId", user.getId())
+                // Lưu thêm Email vào claims để sau này validate (đối chiếu)
+                .claim("email", user.getEmail()) 
+                
+                // Các info phụ khác
                 .claim("fullName", user.getFullName())
                 
                 .issuedAt(new Date(System.currentTimeMillis()))
@@ -37,16 +40,26 @@ public class JwtService {
                 .compact();
     }
 
-    // --- 2. Trích xuất Username (Email) ---
-    public String extractUsername(String token) {
+    // --- 2. Hàm lấy User ID (từ Subject) ---
+    // Dùng cái này khi mầy muốn biết "Ai đang gọi API"
+    public String extractUserId(String token) {
         return extractClaim(token, Claims::getSubject);
     }
 
-    // --- 3. Hàm kiểm tra token hợp lệ (Dùng cho Filter) ---
+    // --- 3. Hàm lấy Email (từ Claims) ---
+    // Dùng cái này để phục vụ logic Validate bên dưới
+    public String extractEmail(String token) {
+        return extractClaim(token, claims -> claims.get("email", String.class));
+    }
+
+    // --- 4. SỬA LOGIC VALIDATE ---
     public boolean isTokenValid(String token, UserDetails userDetails) {
-        final String username = extractUsername(token);
-        // Token đúng khi: Email trong token khớp với UserDetails VÀ chưa hết hạn
-        return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
+        // Lấy email từ trong token ra (lấy từ claim 'email' mình đã lưu ở trên)
+        final String emailInToken = extractEmail(token);
+        
+        // So sánh Email trong token với Email trong Database (UserDetails)
+        // Mầy vẫn dùng email để verify vì UserDetails của Spring thường lưu username là email
+        return (emailInToken.equals(userDetails.getUsername()) && !isTokenExpired(token));
     }
 
     private boolean isTokenExpired(String token) {
@@ -77,10 +90,5 @@ public class JwtService {
     private SecretKey getSignInKey() {
         byte[] keyBytes = Decoders.BASE64.decode(secretKey);
         return Keys.hmacShaKeyFor(keyBytes);
-    }
-
-    // --- 4. Hàm trích xuất Subject (Email) để dùng trong Filter ---
-    public String extractSubject(String token) {
-        return extractClaim(token, Claims::getSubject);
     }
 }

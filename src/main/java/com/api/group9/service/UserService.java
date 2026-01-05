@@ -2,6 +2,7 @@ package com.api.group9.service;
 
 import com.api.group9.dto.Response.UserProfileResponse;
 import com.api.group9.model.User;
+import com.api.group9.repository.FriendShipRepository;
 import com.api.group9.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -18,12 +19,22 @@ public class UserService {
     @Autowired
     private CloudinaryService cloudinaryService;
 
+    @Autowired 
+    private FriendShipRepository friendshipRepository;
     // 1. Lấy thông tin User (Profile)
     public UserProfileResponse getUserProfile(String identifier) {
         User user = userRepository.findByUsernameOrEmail(identifier, identifier)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy user nào trùng khớp bro ơi!"));
+            long count = friendshipRepository.countFriends(user.getId());
+        return new UserProfileResponse(user, count);
+    }
+
+    public UserProfileResponse getUserById(Long id) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy user với ID: " + id));
         
-        return new UserProfileResponse(user);
+                long count = friendshipRepository.countFriends(user.getId());
+        return new UserProfileResponse(user, count);
     }
 
     // 2. Cập nhật thông tin User
@@ -52,8 +63,8 @@ public class UserService {
 
         // Lưu vào DB
         User savedUser = userRepository.save(currentUser);
-        
+        long count = friendshipRepository.countFriends(savedUser.getId());
         // Trả về DTO
-        return new UserProfileResponse(savedUser);
+        return new UserProfileResponse(savedUser, count);
     }
 }

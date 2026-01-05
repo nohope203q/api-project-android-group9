@@ -26,14 +26,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(
-        HttpServletRequest request,
+        HttpServletRequest request, 
         HttpServletResponse response,
         FilterChain filterChain
     ) throws ServletException, IOException {
 
         final String authHeader = request.getHeader("Authorization");
         final String jwt;
-        final String userEmail; // <-- Đổi tên biến cho đúng bản chất
+        final String userEmail;
 
         // 1. Kiểm tra header Authorization
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
@@ -44,9 +44,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         // 2. Trích xuất Token
         jwt = authHeader.substring(7);
         try {
-            // Lấy EMAIL từ token (Thay vì ID như cũ)
-            userEmail = jwtService.extractUsername(jwt); 
-        } catch (RuntimeException e) {
+            // --- SỬA QUAN TRỌNG Ở ĐÂY ---
+            // Phải dùng extractEmail để lấy từ Claim "email"
+            // Nếu dùng extractUsername nó sẽ ra ID -> Sai logic loadUser
+            userEmail = jwtService.extractEmail(jwt); 
+            
+        } catch (Exception e) {
+            // Nếu token lỗi format hoặc hết hạn thì cho qua luôn (để Spring Security xử lý 403 sau)
             filterChain.doFilter(request, response);
             return;
         }
@@ -54,11 +58,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         // 3. Xác thực
         if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             
-            // Load User từ DB bằng EMAIL
+            // Load User từ DB bằng EMAIL (Database tìm cột email)
             UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail);
 
-            // Dùng hàm isTokenValid (Public) thay vì isTokenExpired (Private)
-            // Hàm này kiểm tra cả hạn sử dụng lẫn tính chính chủ
+            // Kiểm tra token hợp lệ
             if (jwtService.isTokenValid(jwt, userDetails)) {
                 
                 UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(

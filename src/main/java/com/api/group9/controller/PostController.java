@@ -47,4 +47,10 @@ public class PostController {
         postService.deletePost(id);
         return ResponseEntity.ok("Đã xóa bài viết và ảnh liên quan!");
     }
+
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<List<PostResponse>> getPostsByUserId(@PathVariable Long userId) {
+        // Bro nhớ viết hàm này bên Service nhé
+        return ResponseEntity.ok(postService.getPostsByUserId(userId));
+    }
 }

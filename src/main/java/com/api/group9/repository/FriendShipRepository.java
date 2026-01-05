@@ -28,4 +28,6 @@ public interface FriendShipRepository extends JpaRepository<FriendShip, Long> {
     // 3. Lấy danh sách lời mời ĐANG CHỜ mình duyệt
     // Mình phải là Receiver và Status là PENDING
     List<FriendShip> findByReceiverAndStatus(User receiver, FriendStatus status);
+    @Query("SELECT COUNT(f) FROM FriendShip f WHERE (f.sender.id = :userId OR f.receiver.id = :userId) AND f.status = 'ACCEPTED'")
+    long countFriends(@Param("userId") Long userId);
 }

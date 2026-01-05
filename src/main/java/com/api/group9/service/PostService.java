@@ -70,7 +70,20 @@ public class PostService {
         });
     }
 
-    // 🔥 API MỚI: Lấy News Feed chuẩn Facebook (Bài của mình + Bạn bè)
+    public List<PostResponse> getPostsByUserId(Long userId) {
+        // Tìm bài viết theo userId, sắp xếp mới nhất lên đầu
+        List<Post> posts = postRepository.findByUserIdOrderByCreatedAtDesc(userId);
+        return posts.stream()
+                .map(this::mapToPostResponse) 
+                .collect(Collectors.toList());
+    }
+
+    private PostResponse mapToPostResponse(Post post) {
+        User author = userRepository.findById(post.getUserId()).orElse(new User());
+        return mapToResponse(post, author);
+    }
+
+
     public Page<PostResponse> getNewsFeed(int page, int size) {
         // 1. Lấy User hiện tại
         String email = SecurityContextHolder.getContext().getAuthentication().getName();

@@ -1,6 +1,7 @@
 package com.api.group9.controller;
 
 import com.api.group9.dto.Response.UserResponse;
+import com.api.group9.dto.Response.UserSuggestResponse;
 import com.api.group9.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -9,6 +10,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.security.Principal;
+import java.util.List;
 
 @RestController
 @RequestMapping("/user")
@@ -57,5 +59,12 @@ public class UserController {
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
+    }
+    @GetMapping("/suggest")
+    public List<UserSuggestResponse> suggest(
+            @RequestParam String q,
+            @RequestParam(defaultValue = "10") int limit
+    ) {
+        return userService.suggestUsers(q, limit);
     }
 }

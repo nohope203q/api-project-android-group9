@@ -32,10 +32,10 @@ public class PostService {
     @Autowired private PostRepository postRepository;
     @Autowired private UserRepository userRepository;
     @Autowired private CloudinaryService cloudinaryService;
-    @Autowired private FriendShipRepository friendRepo; // 🔥 Inject thêm cái này để lấy bạn bè
+    @Autowired private FriendShipRepository friendRepo; 
     @Autowired private ReactionRepository reactionRepository;
+    
 
-    // 🔥 Helper: Hàm chuyển từ Entity sang DTO
     private PostResponse mapToResponse(Post post, User author) {
         PostResponse response = new PostResponse();
         response.setId(post.getId());
@@ -47,16 +47,14 @@ public class PostService {
         response.setLikeCount(post.getLikeCount());
         response.setCommentCount(post.getCommentCount());
 
-        // Map Author
         response.setAuthorId(author.getId());
         response.setAuthorName(author.getFullName());
         response.setAuthorAvatar(author.getProfilePictureUrl());
 
-        // Map Images
         List<String> urls = post.getImages().stream()
                 .map(PostImage::getImageUrl)
                 .collect(Collectors.toList());
-        response.setImageUrl(urls); // Lưu ý: Tên field bên DTO nên là imageUrls (số nhiều)
+        response.setImageUrl(urls); 
 
         return response;
     }

@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import com.api.group9.dto.Response.CommentResponse; // Import DTO mới
+import com.api.group9.enums.NotificationType;
 import com.api.group9.model.Comment;
 import com.api.group9.model.Post;
 import com.api.group9.model.User;
@@ -29,6 +30,9 @@ public class CommentService {
     private PostRepository postRepository;
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private NotificationService notificationService;
 
     // --- SỬA ĐỔI: Phân trang và trả về DTO chứa thông tin User ---
     public Page<CommentResponse> getCommentsByPost(Long postId, int page, int size) {
@@ -92,6 +96,13 @@ public class CommentService {
         // 4. Tăng số lượng comment trong Post
         post.setCommentCount(post.getCommentCount() + 1);
         postRepository.save(post);
+
+        notificationService.sendNotification(
+        user,
+        post.getUser(),
+        NotificationType.COMMENT_POST,
+        post.getId()
+    );
 
         // 5. Lưu Comment
         return commentRepository.save(comment);

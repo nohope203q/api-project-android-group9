@@ -10,6 +10,7 @@ import com.api.group9.model.Reaction;
 import com.api.group9.model.User;
 import com.api.group9.dto.Response.ReactionResponse;
 import com.api.group9.dto.Response.UserResponse;
+import com.api.group9.enums.NotificationType;
 import com.api.group9.enums.ReactionType; // Đảm bảo import đúng Enum
 import com.api.group9.repository.PostRepository;
 import com.api.group9.repository.ReactionRepository;
@@ -28,6 +29,8 @@ public class ReactionService {
     private PostRepository postRepository;
     @Autowired
     private UserRepository userRepository;
+    @Autowired
+    private NotificationService notificationService;
 
     @Transactional
     public Reaction likePost(Long postId) {
@@ -52,6 +55,13 @@ public class ReactionService {
         // 5. CẬP NHẬT SỐ LƯỢNG LIKE VÀO POST (Quan trọng)
         post.setLikeCount(post.getLikeCount() + 1);
         postRepository.save(post);
+        
+        notificationService.sendNotification(
+            user, 
+            post.getUser(), 
+            NotificationType.LIKE_POST, 
+            post.getId()
+        );
 
         return savedReaction;
     }

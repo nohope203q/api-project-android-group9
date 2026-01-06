@@ -80,13 +80,23 @@ public class CommentService {
                 .orElseThrow(() -> new NoSuchElementException("User not found with email: " + email));
         // Kiểm tra nếu là trả lời bình luận thì phải kiểm tra bình luận cha
         if (comment.getParentCommentId() != null) {
-            // Kiểm tra xem bình luận cha có tồn tại không
             Comment parent = commentRepository.findById(comment.getParentCommentId())
                     .orElseThrow(() -> new NoSuchElementException("Không tìm thấy bình luận cha để trả lời"));
 
-            // Logic quan trọng: Bình luận cha phải thuộc cùng bài viết này
             if (!parent.getPostId().equals(postId)) {
                 throw new IllegalArgumentException("Bình luận cha không thuộc bài viết này");
+            }
+            if (!parent.getUserId().equals(user.getId())) {
+                User parentAuthor = userRepository.findById(parent.getUserId()).orElse(null);
+                
+                if (parentAuthor != null) {
+                    notificationService.sendNotification(
+                            user,       // Người gửi (người đang comment)
+                            parentAuthor,      // Người nhận (chủ bình luận cha)
+                            NotificationType.COMMENT_REPLY, // Loại thông báo mới
+                            post.getId()       // Target ID (thường dẫn về bài viết)
+                    );
+                }
             }
         }
         // 3. Gán ID cho Comment

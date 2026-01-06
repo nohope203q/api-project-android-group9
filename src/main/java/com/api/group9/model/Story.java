@@ -21,10 +21,6 @@ public class Story {
     @Enumerated(EnumType.STRING)
     private MediaType mediaType; // IMAGE hoặc VIDEO
 
-
-    @Column(columnDefinition = "TEXT")
-    private String caption;
-
     private LocalDateTime createdAt;
     private LocalDateTime expiredAt;
 

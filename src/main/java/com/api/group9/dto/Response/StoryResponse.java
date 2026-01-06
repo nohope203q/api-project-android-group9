@@ -14,9 +14,9 @@ public class StoryResponse {
     
     private String mediaType; 
 
-    private String caption;
-
     private String email;
+
+    private String createdAt;
 
     public StoryResponse(Story story) {
         this.id = story.getId();
@@ -36,6 +36,6 @@ public class StoryResponse {
             this.mediaType = "IMAGE"; // Mặc định là ảnh
         }
 
-        this.caption = story.getCaption();
+        this.createdAt = story.getCreatedAt().toString();
     }
 }

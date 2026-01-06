@@ -40,8 +40,6 @@ public class Post {
     @Column(nullable = false)
     private int commentCount = 0;
 
-    private String location;
-
     @Column(columnDefinition = "BOOLEAN DEFAULT TRUE")
     private boolean isPublic = true;
 

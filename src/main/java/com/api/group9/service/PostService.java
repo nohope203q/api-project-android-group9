@@ -45,7 +45,6 @@ public class PostService {
         PostResponse response = new PostResponse();
         response.setId(post.getId());
         response.setContent(post.getContent());
-        response.setLocation(post.getLocation());
         response.setPublic(post.isPublic());
         response.setCreatedAt(post.getCreatedAt());
 

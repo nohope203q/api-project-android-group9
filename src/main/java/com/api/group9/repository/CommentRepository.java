@@ -10,4 +10,6 @@ import com.api.group9.model.Comment;
 public interface CommentRepository extends JpaRepository<Comment, Long> {
     Page<Comment> findByPostId(Long postId, Pageable pageable);
     List<Comment> findAllByParentCommentId(Long parentCommentId);
+    void deleteByPostId(Long postId);
+
 }

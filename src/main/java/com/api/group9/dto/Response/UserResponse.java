@@ -26,16 +26,11 @@ public class UserResponse {
     
     // Trạng thái & Token
     private Boolean isVerified;
-    private String accessToken; // Chỉ dùng khi đăng nhập/đăng ký
-
-    // --- CÁC TRƯỜNG MỚI CHO EDIT PROFILE ---
+    private String accessToken; 
     private String phone;
     private String dateOfBirth;
     private String gender;
 
-    // ==========================================================
-    // CONSTRUCTOR 1: Dùng cho LOGIN / REGISTER (Có Token, không cần đếm friend/post)
-    // ==========================================================
     public UserResponse(User user, String accessToken) {
         this.id = user.getId();
         this.username = user.getUsername();
@@ -45,13 +40,9 @@ public class UserResponse {
         this.isVerified = user.getIsVerified();
         this.accessToken = accessToken;
         
-        // Map các trường phụ nếu có
         mapProfileFields(user);
     }
 
-    // ==========================================================
-    // CONSTRUCTOR 2: Dùng cho XEM PROFILE (Có friendCount, postCount, không cần Token)
-    // ==========================================================
     public UserResponse(User user, long friendCount, long postCount) {
         this.id = user.getId();
         this.username = user.getUsername();
@@ -61,19 +52,12 @@ public class UserResponse {
         this.coverUrl = user.getCoverUrl();
         this.profilePictureUrl = user.getProfilePictureUrl();
         this.isVerified = user.getIsVerified();
-        
-        // Gán số lượng
         this.friendCount = friendCount;
         this.postCount = postCount;
-        
-        // Token null để @JsonInclude ẩn đi
         this.accessToken = null;
-
-        // Map các trường phụ
         mapProfileFields(user);
     }
 
-    // Hàm phụ để map các trường thông tin cá nhân (tránh viết lại code)
     private void mapProfileFields(User user) {
         this.phone = user.getPhone();
         

@@ -48,8 +48,8 @@ public class User {
     
     private LocalDate dateOfBirth; 
     private String phone;
-
     @Enumerated(EnumType.STRING) 
+    
     private Gender gender;
     @Column(updatable = false) 
     private Instant createdAt = Instant.now();

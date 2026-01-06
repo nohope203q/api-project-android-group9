@@ -21,4 +21,6 @@ public interface ReactionRepository extends JpaRepository<Reaction, Long> {
 
     @Query("SELECT r.user FROM Reaction r WHERE r.post.id = :postId")
     List<User> findUsersByPostId(@Param("postId") Long postId);
+
+    void deleteByPostId(Long postId);
 }

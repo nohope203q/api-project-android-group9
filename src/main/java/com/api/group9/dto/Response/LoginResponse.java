@@ -8,9 +8,9 @@ import lombok.AllArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class LoginResponse {
-    
-    private String status;
-    private String message;  
-    private String token; 
 
+    private String status;
+    private String message;
+    private String token;
+    private Long userId;
 }

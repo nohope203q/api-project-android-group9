@@ -1,15 +1,18 @@
 package com.api.group9.service;
 
 import com.api.group9.dto.Response.UserResponse;
+import com.api.group9.dto.Response.UserSuggestResponse;
 import com.api.group9.model.User;
 import com.api.group9.repository.FriendShipRepository;
 import com.api.group9.repository.PostRepository;
 import com.api.group9.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.List;
 
 @Service
 public class UserService {
@@ -74,6 +77,17 @@ public class UserService {
         // Trả về DTO
         return new UserResponse(savedUser, friendCount, postCount);
     }
+    public List<UserSuggestResponse> suggestUsers(String q, int limit) {
+        if (q == null) q = "";
+        q = q.trim();
+        if (q.length() < 1) return List.of();
 
+        int safeLimit = Math.min(Math.max(limit, 1), 20);
+
+        List<User> users = userRepository.suggestUsers(q, PageRequest.of(0, safeLimit));
+        return users.stream()
+                .map(u -> new UserSuggestResponse(u.getId(), u.getUsername(), u.getFullName(), u.getProfilePictureUrl()))
+                .toList();
+    }
     
 }

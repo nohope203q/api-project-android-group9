@@ -83,7 +83,7 @@ public class CommentService {
             // Kiểm tra xem bình luận cha có tồn tại không
             Comment parent = commentRepository.findById(comment.getParentCommentId())
                     .orElseThrow(() -> new NoSuchElementException("Không tìm thấy bình luận cha để trả lời"));
-            
+
             // Logic quan trọng: Bình luận cha phải thuộc cùng bài viết này
             if (!parent.getPostId().equals(postId)) {
                 throw new IllegalArgumentException("Bình luận cha không thuộc bài viết này");
@@ -92,17 +92,16 @@ public class CommentService {
         // 3. Gán ID cho Comment
         comment.setPostId(post.getId());
         comment.setUserId(user.getId());
-        
+
         // 4. Tăng số lượng comment trong Post
         post.setCommentCount(post.getCommentCount() + 1);
         postRepository.save(post);
 
         notificationService.sendNotification(
-        user,
-        post.getUser(),
-        NotificationType.COMMENT_POST,
-        post.getId()
-    );
+                user,
+                post.getUser(),
+                NotificationType.COMMENT_POST,
+                post.getId());
 
         // 5. Lưu Comment
         return commentRepository.save(comment);
@@ -116,17 +115,17 @@ public class CommentService {
         // Có thể thêm kiểm tra quyền: Chỉ chủ comment mới được sửa
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User currentUser = userRepository.findByEmail(email).orElseThrow();
-        
+
         if (!comment.getUserId().equals(currentUser.getId())) {
-             throw new RuntimeException("Không có quyền chỉnh sửa bình luận này");
+            throw new RuntimeException("Không có quyền chỉnh sửa bình luận này");
         }
 
         comment.setContent(newData.getContent());
-        
+
         return commentRepository.save(comment);
     }
 
-@Transactional
+    @Transactional
     public void deleteComment(Long commentId) {
         // 1. Tìm comment
         Comment comment = commentRepository.findById(commentId)
@@ -149,10 +148,10 @@ public class CommentService {
             throw new RuntimeException("Bạn không có quyền xóa bình luận này"); // Hoặc AccessDeniedException
         }
         // 4. LOGIC XÓA (CÁCH 1: Xóa cha bay luôn con)
-        
+
         // Tìm danh sách các bình luận con (Replies)
         List<Comment> replies = commentRepository.findAllByParentCommentId(commentId);
-        
+
         // Tính tổng số lượng comment sẽ bị xóa (1 cha + n con)
         int totalDeleted = 1 + replies.size();
 
@@ -160,15 +159,15 @@ public class CommentService {
         if (!replies.isEmpty()) {
             commentRepository.deleteAll(replies);
         }
-        
+
         // Sau đó xóa cha
         commentRepository.delete(comment);
         if (post != null) {
-        // Lấy số lượng cũ trừ đi tổng số đã xóa
-        int newCount = Math.max(post.getCommentCount() - totalDeleted, 0);
-        
-        post.setCommentCount(newCount);
-        postRepository.save(post);
-    }
+            // Lấy số lượng cũ trừ đi tổng số đã xóa
+            int newCount = Math.max(post.getCommentCount() - totalDeleted, 0);
+
+            post.setCommentCount(newCount);
+            postRepository.save(post);
+        }
     }
 }

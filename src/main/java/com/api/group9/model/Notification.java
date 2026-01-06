@@ -22,9 +22,9 @@ public class Notification {
     private User sender;
 
     @Enumerated(EnumType.STRING)
+    @Column(name = "type", length = 50)
     private NotificationType type;
 
-    // ID của đối tượng liên quan (VD: PostID để bấm vào notification thì mở bài đó ra)
     private Long relatedId; 
 
     private String message;

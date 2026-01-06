@@ -44,6 +44,8 @@ public class NotificationService {
                 break;
              case ACCEPT_FRIEND:
                 noti.setMessage("đã chấp nhận lời mời kết bạn.");
+             case COMMENT_REPLY:
+                noti.setMessage("đã trả lời bình luận của bạn.");
                 break;
         }
 

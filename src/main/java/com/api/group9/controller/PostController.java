@@ -28,6 +28,7 @@ public class PostController {
     }
 
     // GET /api/posts?page=0&size=10
+    
     @GetMapping
     public ResponseEntity<Page<PostResponse>> getNewsFeed(
             @RequestParam(defaultValue = "0") int page,

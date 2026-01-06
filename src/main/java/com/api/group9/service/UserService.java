@@ -1,14 +1,18 @@
 package com.api.group9.service;
 
 import com.api.group9.dto.Response.UserProfileResponse;
+import com.api.group9.dto.Response.UserSuggestResponse;
 import com.api.group9.model.User;
 import com.api.group9.repository.FriendShipRepository;
+import com.api.group9.repository.PostRepository;
 import com.api.group9.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.List;
 
 @Service
 public class UserService {
@@ -21,12 +25,16 @@ public class UserService {
 
     @Autowired 
     private FriendShipRepository friendshipRepository;
+
+    @Autowired
+    private PostRepository PostRepository;
     // 1. Lấy thông tin User (Profile)
     public UserProfileResponse getUserProfile(String identifier) {
         User user = userRepository.findByUsernameOrEmail(identifier, identifier)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy user nào trùng khớp bro ơi!"));
             long count = friendshipRepository.countFriends(user.getId());
-        return new UserProfileResponse(user, count);
+            long postCount = PostRepository.countByUserId(user.getId());
+        return new UserProfileResponse(user, count, postCount);
     }
 
     public UserProfileResponse getUserById(Long id) {
@@ -34,7 +42,8 @@ public class UserService {
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy user với ID: " + id));
         
                 long count = friendshipRepository.countFriends(user.getId());
-        return new UserProfileResponse(user, count);
+                long postCount = PostRepository.countByUserId(user.getId());
+        return new UserProfileResponse(user, count, postCount);
     }
 
     // 2. Cập nhật thông tin User
@@ -64,7 +73,20 @@ public class UserService {
         // Lưu vào DB
         User savedUser = userRepository.save(currentUser);
         long count = friendshipRepository.countFriends(savedUser.getId());
+        long postCount = PostRepository.countByUserId(savedUser.getId());
         // Trả về DTO
-        return new UserProfileResponse(savedUser, count);
+        return new UserProfileResponse(savedUser, count, postCount);
+    }
+    public List<UserSuggestResponse> suggestUsers(String q, int limit) {
+        if (q == null) q = "";
+        q = q.trim();
+        if (q.length() < 1) return List.of();
+
+        int safeLimit = Math.min(Math.max(limit, 1), 20);
+
+        List<User> users = userRepository.suggestUsers(q, PageRequest.of(0, safeLimit));
+        return users.stream()
+                .map(u -> new UserSuggestResponse(u.getId(), u.getUsername(), u.getFullName(), u.getProfilePictureUrl()))
+                .toList();
     }
 }

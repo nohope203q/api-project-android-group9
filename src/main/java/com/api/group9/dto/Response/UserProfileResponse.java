@@ -18,7 +18,8 @@ public class UserProfileResponse {
     private String profilePictureUrl;
     private String bio;
     private long friendCount; 
-    public UserProfileResponse(User user, long friendCount) {
+    private long postCount;
+    public UserProfileResponse(User user, long friendCount, long postCount) {
         this.id = user.getId();
         this.username = user.getUsername();
         this.email = user.getEmail();
@@ -27,5 +28,6 @@ public class UserProfileResponse {
         this.coverUrl = user.getCoverUrl();
         this.profilePictureUrl = user.getProfilePictureUrl();
         this.friendCount = friendCount;
+        this.postCount = postCount;
     }
 }

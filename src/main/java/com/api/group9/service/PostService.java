@@ -59,7 +59,6 @@ public class PostService {
         return response;
     }
 
-    // API cũ: Lấy tất cả (Dành cho tab Explore/Admin)
     public Page<PostResponse> getAllPosts(int page, int size) {
         PageRequest pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         return postRepository.findAll(pageable).map(post -> {
@@ -68,17 +67,30 @@ public class PostService {
         });
     }
 
-    public List<PostResponse> getPostsByUserId(Long userId) {
-        // Tìm bài viết theo userId, sắp xếp mới nhất lên đầu
-        List<Post> posts = postRepository.findByUserIdOrderByCreatedAtDesc(userId);
-        return posts.stream()
-                .map(this::mapToPostResponse) 
-                .collect(Collectors.toList());
-    }
+    public List<PostResponse> getPostsByUserId(Long targetUserId) {
+        // 1. Lấy User hiện tại (Người đang thực hiện hành động xem Profile)
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        User currentUser = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
-    private PostResponse mapToPostResponse(Post post) {
-        User author = userRepository.findById(post.getUserId()).orElse(new User());
-        return mapToResponse(post, author);
+        // 2. Lấy danh sách bài viết của người được xem (Target User)
+        List<Post> posts = postRepository.findByUserIdOrderByCreatedAtDesc(targetUserId);
+
+        // 3. Map sang DTO và KIỂM TRA LIKE
+        return posts.stream().map(post -> {
+            User author = userRepository.findById(post.getUserId()).orElse(new User());
+            
+            // Map thông tin cơ bản
+            PostResponse response = mapToResponse(post, author);
+
+            // --- LOGIC QUAN TRỌNG: CHECK LIKE ---
+            // Kiểm tra xem currentUser (người đang xem) có like bài này không
+            boolean isLiked = reactionRepository.existsByPostAndUser(post, currentUser);
+            response.setLikedByCurrentUser(isLiked);
+            // ------------------------------------
+
+            return response;
+        }).collect(Collectors.toList());
     }
 
 

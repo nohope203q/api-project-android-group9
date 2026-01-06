@@ -13,12 +13,10 @@ import java.util.Optional;
 
 public interface ReactionRepository extends JpaRepository<Reaction, Long> {
     
-    // Tìm theo Object Post và User
     boolean existsByPostAndUser(Post post, User user);
     
     Optional<Reaction> findByPostAndUser(Post post, User user);
     
-    // Đếm số lượng (JPA tự hiểu PostId map với post.id)
     long countByPostId(Long postId);
 
     @Query("SELECT r.user FROM Reaction r WHERE r.post.id = :postId")

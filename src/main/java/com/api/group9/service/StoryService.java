@@ -26,13 +26,12 @@ public class StoryService {
     private CloudinaryService cloudinaryService;
 
     // Logic tạo Story
-    public void createStory(String email, MultipartFile file, String caption
+    public void createStory(String email, MultipartFile file
                            ) throws Exception {
         
         User user = userRepository.findByEmail(email).orElseThrow();
         Story story = new Story();
         story.setUser(user);
-        story.setCaption(caption);
 
         String contentType = file.getContentType();
         String uploadedUrl = "";

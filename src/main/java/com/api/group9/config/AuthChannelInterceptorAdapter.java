@@ -38,13 +38,12 @@ public class AuthChannelInterceptorAdapter implements ChannelInterceptor {
                     
                     System.out.println(">>> 2. Token nhận được: " + token.substring(0, 10) + "...");
 
-                    // --- SỬA CHỖ NÀY ---
                     // Dùng extractEmail để lấy email từ claim "email" thay vì lấy từ subject (ID)
                     String userEmail = jwtService.extractEmail(token); 
                     System.out.println(">>> 3. Email trong token: " + userEmail);
 
                     if (userEmail != null) {
-                        // Load user từ DB bằng Email (cái này vẫn giữ nguyên)
+                        // Load user từ DB bằng Email 
                         UserDetails userDetails = userDetailsService.loadUserByUsername(userEmail);
                         System.out.println(">>> 5. Tìm thấy User: " + userDetails.getUsername());
 

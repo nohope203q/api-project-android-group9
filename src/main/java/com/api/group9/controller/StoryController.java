@@ -21,7 +21,7 @@ public class StoryController {
             Principal principal) {
             
         try {
-            storyService.createStory(principal.getName(), file, caption);
+            storyService.createStory(principal.getName(), file);
             return ResponseEntity.ok("Đăng story thành công!");
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Lỗi upload: " + e.getMessage());

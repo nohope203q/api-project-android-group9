@@ -1,8 +1,9 @@
 package com.api.group9.service;
 
-import com.api.group9.dto.Response.UserProfileResponse;
+import com.api.group9.dto.Response.UserResponse;
 import com.api.group9.model.User;
 import com.api.group9.repository.FriendShipRepository;
+import com.api.group9.repository.PostRepository;
 import com.api.group9.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -21,24 +22,29 @@ public class UserService {
 
     @Autowired 
     private FriendShipRepository friendshipRepository;
+
+    @Autowired
+    private PostRepository postRepository;
     // 1. Lấy thông tin User (Profile)
-    public UserProfileResponse getUserProfile(String identifier) {
+    public UserResponse getUserProfile(String identifier) {
         User user = userRepository.findByUsernameOrEmail(identifier, identifier)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy user nào trùng khớp bro ơi!"));
-            long count = friendshipRepository.countFriends(user.getId());
-        return new UserProfileResponse(user, count);
+            long friendCount = friendshipRepository.countFriends(user.getId());
+            long postCount = postRepository.countByUserId(user.getId());
+        return new UserResponse(user, friendCount, postCount);
     }
 
-    public UserProfileResponse getUserById(Long id) {
+    public UserResponse getUserById(Long id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy user với ID: " + id));
-        
-                long count = friendshipRepository.countFriends(user.getId());
-        return new UserProfileResponse(user, count);
+
+                long friendCount = friendshipRepository.countFriends(user.getId());
+                long postCount = postRepository.countByUserId(user.getId());
+        return new UserResponse(user, friendCount, postCount);
     }
 
     // 2. Cập nhật thông tin User
-    public UserProfileResponse updateUserProfile(String currentUsername, String fullName, String bio, 
+    public UserResponse updateUserProfile(String currentUsername, String fullName, String bio, 
                                                  MultipartFile profilePictureUrl, MultipartFile coverUrl) throws IOException {
         
         // Tìm user hiện tại
@@ -63,8 +69,9 @@ public class UserService {
 
         // Lưu vào DB
         User savedUser = userRepository.save(currentUser);
-        long count = friendshipRepository.countFriends(savedUser.getId());
+        long friendCount = friendshipRepository.countFriends(savedUser.getId());
+        long postCount = postRepository.countByUserId(savedUser.getId());
         // Trả về DTO
-        return new UserProfileResponse(savedUser, count);
+        return new UserResponse(savedUser, friendCount, postCount);
     }
 }

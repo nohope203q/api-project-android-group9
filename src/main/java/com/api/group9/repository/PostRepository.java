@@ -18,4 +18,6 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     Page<Post> findNewsFeed(@Param("userIds") List<Long> userIds, Pageable pageable);
 
     List<Post> findByUserIdOrderByCreatedAtDesc(Long userId);
+
+    long countByUserId(Long userId);
 }

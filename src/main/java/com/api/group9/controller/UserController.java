@@ -1,6 +1,6 @@
 package com.api.group9.controller;
 
-import com.api.group9.dto.Response.UserProfileResponse;
+import com.api.group9.dto.Response.UserResponse;
 import com.api.group9.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -20,7 +20,7 @@ public class UserController {
     @GetMapping("/profile/{identifier}")
     public ResponseEntity<?> getUserProfile(@PathVariable String identifier) {
         try {
-            UserProfileResponse response = userService.getUserProfile(identifier);
+            UserResponse response = userService.getUserProfile(identifier);
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -28,7 +28,7 @@ public class UserController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<UserProfileResponse> getUserById(@PathVariable Long id) {
+    public ResponseEntity<UserResponse> getUserById(@PathVariable Long id) {
         return ResponseEntity.ok(userService.getUserById(id));
     }
 
@@ -42,7 +42,7 @@ public class UserController {
     ) {
         try {
             // Controller chỉ việc lấy tên User từ Principal và chuyển hết data sang Service xử lý
-            UserProfileResponse response = userService.updateUserProfile(
+            UserResponse response = userService.updateUserProfile(
                 principal.getName(), 
                 fullName, 
                 bio, 

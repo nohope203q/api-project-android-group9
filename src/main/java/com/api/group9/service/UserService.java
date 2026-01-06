@@ -1,7 +1,6 @@
 package com.api.group9.service;
 
 import com.api.group9.dto.Response.UserResponse;
-import com.api.group9.enums.Gender;
 import com.api.group9.model.User;
 import com.api.group9.repository.FriendShipRepository;
 import com.api.group9.repository.PostRepository;
@@ -11,7 +10,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.time.LocalDate;
 
 @Service
 public class UserService {
@@ -47,7 +45,7 @@ public class UserService {
 
     // 2. Cập nhật thông tin User
     public UserResponse updateUserProfile(String currentUsername, String fullName, String bio, 
-                                                 MultipartFile profilePictureUrl, MultipartFile coverUrl, String phone, LocalDate dateOfBirth, Gender gender) throws IOException {
+                                                 MultipartFile profilePictureUrl, MultipartFile coverUrl) throws IOException {
         
         // Tìm user hiện tại
         User currentUser = userRepository.findByUsernameOrEmail(currentUsername, currentUsername)
@@ -56,9 +54,6 @@ public class UserService {
         // Cập nhật thông tin văn bản
         if (fullName != null) currentUser.setFullName(fullName);
         if (bio != null) currentUser.setBio(bio);
-        if (phone != null) currentUser.setPhone(phone);
-        if (dateOfBirth != null) currentUser.setDateOfBirth(dateOfBirth);
-        if (gender != null) currentUser.setGender(gender);
 
         // Xử lý upload ảnh đại diện
         if (profilePictureUrl != null && !profilePictureUrl.isEmpty()) {

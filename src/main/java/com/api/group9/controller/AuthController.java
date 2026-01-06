@@ -38,7 +38,7 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest req) {
         UserResponse user = authService.login(req);
-        return ResponseEntity.ok(new LoginResponse("success", "Login thành công", user.getAccessToken()));
+        return ResponseEntity.ok(new LoginResponse("success", "Login thành công", user.getAccessToken(), user.getId()));
     }
 
     // 4. Xin lại OTP (Resend)

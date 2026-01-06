@@ -7,11 +7,8 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class PostRequest {
+public class PostUpdateRequest {
     private String content;
-    
     private String imageUrl;
-        
     private boolean isPublic;
-    
 }

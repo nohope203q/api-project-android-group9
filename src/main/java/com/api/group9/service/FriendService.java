@@ -26,7 +26,7 @@ public class FriendService {
     public String sendRequest(String myEmail, FriendRequest requestDto) {
         User sender = userRepo.findByEmail(myEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        
+
         User receiver = userRepo.findByEmail(requestDto.getEmail())
                 .orElseThrow(() -> new RuntimeException("Friend not found"));
 
@@ -95,22 +95,33 @@ public class FriendService {
     }
 
     public List<FriendResponse> getPendingRequests(String myEmail) {
-    User me = userRepo.findByEmail(myEmail).orElseThrow();
-    
-    // Gọi Repository tìm list pending (Bro tự thêm method vào Repo nhé)
-    List<FriendShip> pendingList = friendRepo.findByReceiverAndStatus(me, FriendStatus.PENDING);
-    
-    return pendingList.stream().map(f -> {
-        FriendResponse dto = new FriendResponse();
-        dto.setFriendshipId(f.getId()); // Quan trọng: Trả về ID này để Client gọi API Accept
-        dto.setId(f.getSender().getId());
-        dto.setFullName(f.getSender().getFullName());
-        dto.setEmail(f.getSender().getEmail());
-        dto.setStatus(f.getStatus().name());
-        dto.setFriendSince(f.getCreatedAt());
-        dto.setProfilePictureUrl(f.getSender().getProfilePictureUrl()); 
-        dto.setCoverUrl(f.getSender().getCoverUrl());
-        return dto;
-    }).collect(Collectors.toList());
+        User me = userRepo.findByEmail(myEmail).orElseThrow();
+
+        // Gọi Repository tìm list pending (Bro tự thêm method vào Repo nhé)
+        List<FriendShip> pendingList = friendRepo.findByReceiverAndStatus(me, FriendStatus.PENDING);
+
+        return pendingList.stream().map(f -> {
+            FriendResponse dto = new FriendResponse();
+            dto.setFriendshipId(f.getId()); // Quan trọng: Trả về ID này để Client gọi API Accept
+            dto.setId(f.getSender().getId());
+            dto.setFullName(f.getSender().getFullName());
+            dto.setEmail(f.getSender().getEmail());
+            dto.setStatus(f.getStatus().name());
+            dto.setFriendSince(f.getCreatedAt());
+            dto.setProfilePictureUrl(f.getSender().getProfilePictureUrl());
+            dto.setCoverUrl(f.getSender().getCoverUrl());
+            return dto;
+        }).collect(Collectors.toList());
+    }
+
+    public String checkFriendshipStatus(String myEmail, Long targetUserId) {
+    User me = userRepo.findByEmail(myEmail)
+            .orElseThrow(() -> new RuntimeException("User not found"));
+    User target = userRepo.findById(targetUserId)
+            .orElseThrow(() -> new RuntimeException("Target user not found"));
+
+    return friendRepo.findRelationship(me, target)
+            .map(f -> f.getStatus().name()) 
+            .orElse("NOT_FRIEND"); 
 }
 }

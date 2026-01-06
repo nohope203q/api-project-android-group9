@@ -1,6 +1,7 @@
 package com.api.group9.controller;
 
 import com.api.group9.dto.Response.UserResponse;
+import com.api.group9.enums.Gender;
 import com.api.group9.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -9,6 +10,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.security.Principal;
+import java.time.LocalDate;
 
 @RestController
 @RequestMapping("/user")
@@ -38,6 +40,9 @@ public class UserController {
             @RequestParam(required = false) String bio,
             @RequestParam(required = false) MultipartFile profilePictureUrl,
             @RequestParam(required = false) MultipartFile coverUrl,
+                @RequestParam(required = false) String phone,
+                @RequestParam(required = false) LocalDate dateOfBirth,
+                @RequestParam(required = false) Gender gender,
             Principal principal // Lấy thông tin người dùng từ Token
     ) {
         try {
@@ -47,7 +52,10 @@ public class UserController {
                 fullName, 
                 bio, 
                 profilePictureUrl, 
-                coverUrl
+                coverUrl,
+                phone,
+                dateOfBirth,
+                gender
             );
             
             return ResponseEntity.ok(response);

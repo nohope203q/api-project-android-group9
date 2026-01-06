@@ -11,4 +11,7 @@ public class UpdateProfileRequest {
     private String bio;
     private String profilePictureUrl;
     private String coverUrl;
+    private String phone;
+    private String dateOfBirth; 
+    private String gender;
 }

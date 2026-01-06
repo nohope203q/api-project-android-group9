@@ -36,4 +36,5 @@ public interface FriendShipRepository extends JpaRepository<FriendShip, Long> {
                      "UNION " +
                      "SELECT f.sender.id FROM FriendShip f WHERE f.receiver.id = :userId AND f.status = 'ACCEPTED'")
        List<Long> findAllFriendIds(@Param("userId") Long userId);
+       
 }

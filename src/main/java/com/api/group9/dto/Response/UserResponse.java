@@ -27,9 +27,6 @@ public class UserResponse {
     // Trạng thái & Token
     private Boolean isVerified;
     private String accessToken; 
-    private String phone;
-    private String dateOfBirth;
-    private String gender;
 
     public UserResponse(User user, String accessToken) {
         this.id = user.getId();
@@ -39,8 +36,6 @@ public class UserResponse {
         this.profilePictureUrl = user.getProfilePictureUrl();
         this.isVerified = user.getIsVerified();
         this.accessToken = accessToken;
-        
-        mapProfileFields(user);
     }
 
     public UserResponse(User user, long friendCount, long postCount) {
@@ -55,18 +50,5 @@ public class UserResponse {
         this.friendCount = friendCount;
         this.postCount = postCount;
         this.accessToken = null;
-        mapProfileFields(user);
-    }
-
-    private void mapProfileFields(User user) {
-        this.phone = user.getPhone();
-        
-        if (user.getDateOfBirth() != null) {
-            this.dateOfBirth = user.getDateOfBirth().toString(); // YYYY-MM-DD
-        }
-        
-        if (user.getGender() != null) {
-            this.gender = user.getGender().name(); // "MALE", "FEMALE"
-        }
     }
 }

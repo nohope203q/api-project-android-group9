@@ -105,7 +105,6 @@ public class AuthService {
         
         String subject = switch (purpose) {
             case FORGOT_PASSWORD -> "Mã xác thực QUÊN MẬT KHẨU";
-            case CHANGE_PASSWORD -> "Mã xác thực ĐỔI MẬT KHẨU";
             case REGISTER -> "Mã xác thực ĐĂNG KÝ";
             default -> "Mã OTP của bạn";
         };
@@ -151,5 +150,20 @@ public class AuthService {
         } catch (Exception e) {
             throw new RuntimeException("Lỗi gửi email: " + e.getMessage());
         }
+    }
+
+    public void changePassword(String email, ChangePasswordRequest request) {
+        // 1. Tìm user
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Người dùng không tồn tại."));
+
+        // 2. Check mật khẩu cũ (Quan trọng)
+        if (!passwordEncoder.matches(request.getOldPassword(), user.getPasswordHash())) {
+            throw new RuntimeException("Mật khẩu hiện tại không đúng.");
+        }
+
+        // 3. Update mật khẩu mới
+        user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
     }
 }

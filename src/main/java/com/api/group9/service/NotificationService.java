@@ -23,7 +23,7 @@ public class NotificationService {
     private UserRepository userRepository;
 
     public void sendNotification(User sender, User recipient, NotificationType type, Long relatedId) {
-        if (sender.getId().equals(recipient.getId())) return;
+        if (sender.getId().equals(recipient.getId())) return; // Không tự thông báo cho chính mình
 
         Notification noti = new Notification();
         noti.setSender(sender);
@@ -31,42 +31,58 @@ public class NotificationService {
         noti.setType(type);
         noti.setRelatedId(relatedId);
 
-        // Tạo nội dung tin nhắn tùy loại
         switch (type) {
             case LIKE_POST:
                 noti.setMessage("đã thích bài viết của bạn.");
                 break;
+                
             case COMMENT_POST:
                 noti.setMessage("đã bình luận về bài viết của bạn.");
                 break;
+                
             case FRIEND_REQUEST:
                 noti.setMessage("đã gửi lời mời kết bạn.");
                 break;
-             case ACCEPT_FRIEND:
+                
+            // Gộp 2 cái này lại nếu ý nghĩa giống nhau, hoặc xóa bớt 1 cái
+            case FRIEND_ACCEPT: 
+            case ACCEPT_FRIEND:
                 noti.setMessage("đã chấp nhận lời mời kết bạn.");
-             case COMMENT_REPLY:
+                break; // <-- QUAN TRỌNG: Đã thêm break ở đây
+                
+            case COMMENT_REPLY:
                 noti.setMessage("đã trả lời bình luận của bạn.");
+                break;
+                
+            default:
+                noti.setMessage("đã có tương tác mới.");
                 break;
         }
 
         notificationRepository.save(noti);
     }
 
-    // 2. Lấy danh sách thông báo của User đang đăng nhập
+    // 2. Lấy danh sách thông báo
     public List<NotificationResponse> getMyNotifications() {
-        String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
-        User currentUser = userRepository.findByUsernameOrEmail(currentUsername, currentUsername).orElseThrow();
+        String currentEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+        
+        // Lưu ý: Đảm bảo Repo có hàm findByEmail nhé
+        User currentUser = userRepository.findByEmail(currentEmail)
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
         List<Notification> list = notificationRepository.findByRecipientIdOrderByCreatedAtDesc(currentUser.getId());
+        
+        // Đoạn này nó sẽ gọi cái Constructor mầy vừa sửa ở bước trước
+        // -> senderId sẽ được map vào DTO -> Gửi về Android
         return list.stream().map(NotificationResponse::new).collect(Collectors.toList());
     }
     
-    // 3. Đánh dấu đã đọc (Khi user bấm vào thông báo)
+    // 3. Đánh dấu đã đọc
     public void markAsRead(Long notificationId) {
-        Notification noti = notificationRepository.findById(notificationId).orElse(null);
-        if (noti != null) {
+        // Dùng ifPresent cho gọn và an toàn
+        notificationRepository.findById(notificationId).ifPresent(noti -> {
             noti.setRead(true);
             notificationRepository.save(noti);
-        }
+        });
     }
 }

@@ -68,21 +68,20 @@ public class AuthController {
         return ResponseEntity.ok(Map.of("message", "Đặt lại mật khẩu thành công."));
     }
 
-    // 7. Đổi mật khẩu - Bước 1: Xin OTP (Dành cho user ĐÃ LOGIN)
-    @PostMapping("/request-change-password")
-    public ResponseEntity<?> requestChangePassword(Authentication authentication) {
-        if (authentication == null)
-            throw new RuntimeException("Chưa đăng nhập");
-        String email = authentication.getName(); // Lấy email từ Token an toàn tuyệt đối
-        authService.sendOtp(email, OtpCode.OtpPurpose.CHANGE_PASSWORD);
-        return ResponseEntity.ok(Map.of("message", "OTP đổi mật khẩu đã gửi."));
-    }
-
-    // 8. Đổi mật khẩu - Bước 2: Confirm
     @PostMapping("/change-password")
-    public ResponseEntity<?> changePassword(@RequestBody ResetPasswordRequest req) {
-        authService.processPasswordReset(req.getEmail(), req.getOtpCode(), req.getNewPassword(),
-                OtpCode.OtpPurpose.CHANGE_PASSWORD);
-        return ResponseEntity.ok(Map.of("message", "Đổi mật khẩu thành công."));
+    public ResponseEntity<?> changePassword(@RequestBody ChangePasswordRequest req, Authentication authentication) {
+        try {
+            if (authentication == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Vui lòng đăng nhập."));
+            }
+            String currentEmail = authentication.getName();
+
+            authService.changePassword(currentEmail, req);
+
+            return ResponseEntity.ok(Map.of("message", "Đổi mật khẩu thành công!"));
+            
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
     }
 }

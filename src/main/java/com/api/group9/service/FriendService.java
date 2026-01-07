@@ -3,6 +3,7 @@ package com.api.group9.service;
 import com.api.group9.dto.Request.FriendRequest;
 import com.api.group9.dto.Response.FriendResponse;
 import com.api.group9.enums.FriendStatus;
+import com.api.group9.enums.NotificationType;
 import com.api.group9.model.FriendShip;
 import com.api.group9.model.User;
 import com.api.group9.repository.FriendShipRepository;
@@ -18,6 +19,9 @@ public class FriendService {
 
     @Autowired
     private FriendShipRepository friendRepo;
+
+    @Autowired
+    private NotificationService notificationService;
 
     @Autowired
     private UserRepository userRepo;
@@ -44,6 +48,12 @@ public class FriendService {
         friendship.setReceiver(receiver);
         friendship.setStatus(FriendStatus.PENDING); // Trạng thái chờ
 
+        notificationService.sendNotification(
+            sender, 
+            receiver, 
+            NotificationType.FRIEND_REQUEST, 
+            null
+        );
         friendRepo.save(friendship);
         return "Gửi lời mời thành công!";
     }
@@ -61,10 +71,6 @@ public class FriendService {
             dto.setFriendshipId(f.getId());
             dto.setStatus(f.getStatus().name());
             dto.setFriendSince(f.getCreatedAt());
-
-            // Logic quan trọng: Xác định ai là bạn
-            // Nếu mình là Sender -> Bạn là Receiver
-            // Nếu mình là Receiver -> Bạn là Sender
             User friend = f.getSender().getId().equals(me.getId()) ? f.getReceiver() : f.getSender();
 
             dto.setId(friend.getId());
@@ -90,19 +96,46 @@ public class FriendService {
         friendship.setStatus(FriendStatus.ACCEPTED);
         friendship.setRespondedAt(java.time.Instant.now());
         friendRepo.save(friendship);
+       
+        notificationService.sendNotification(
+            friendship.getReceiver(), 
+            friendship.getSender(), 
+            NotificationType.FRIEND_ACCEPT, 
+            null
+        );
 
         return "Đã trở thành bạn bè!";
     }
 
+    public String acceptRequestByEmail(String myEmail, String targetEmail) {
+    User me = userRepo.findByEmail(myEmail).orElseThrow(() -> new RuntimeException("User not found"));
+    User target = userRepo.findByEmail(targetEmail).orElseThrow(() -> new RuntimeException("Target not found"));
+
+    FriendShip friendship = friendRepo.findRelationship(me, target)
+            .orElseThrow(() -> new RuntimeException("Không tìm thấy lời mời kết bạn nào!"));
+
+    if (friendship.getStatus() == FriendStatus.PENDING) {
+        if (friendship.getReceiver().getId().equals(me.getId())) {
+            friendship.setStatus(FriendStatus.ACCEPTED);
+            friendship.setRespondedAt(java.time.Instant.now());
+            friendRepo.save(friendship);
+            return "Đã chấp nhận lời mời!";
+        } else {
+            throw new RuntimeException("Bạn là người gửi, không thể tự chấp nhận!");
+        }
+    }
+    
+    throw new RuntimeException("Trạng thái không hợp lệ để chấp nhận!");
+}
+
     public List<FriendResponse> getPendingRequests(String myEmail) {
         User me = userRepo.findByEmail(myEmail).orElseThrow();
 
-        // Gọi Repository tìm list pending (Bro tự thêm method vào Repo nhé)
         List<FriendShip> pendingList = friendRepo.findByReceiverAndStatus(me, FriendStatus.PENDING);
 
         return pendingList.stream().map(f -> {
             FriendResponse dto = new FriendResponse();
-            dto.setFriendshipId(f.getId()); // Quan trọng: Trả về ID này để Client gọi API Accept
+            dto.setFriendshipId(f.getId()); 
             dto.setId(f.getSender().getId());
             dto.setFullName(f.getSender().getFullName());
             dto.setEmail(f.getSender().getEmail());
@@ -114,14 +147,45 @@ public class FriendService {
         }).collect(Collectors.toList());
     }
 
-    public String checkFriendshipStatus(String myEmail, Long targetUserId) {
-    User me = userRepo.findByEmail(myEmail)
-            .orElseThrow(() -> new RuntimeException("User not found"));
-    User target = userRepo.findById(targetUserId)
-            .orElseThrow(() -> new RuntimeException("Target user not found"));
+    // Logic giả định trong Backend
+    public FriendResponse checkFriendStatus(Long currentUserId, Long targetUserId) {
 
-    return friendRepo.findRelationship(me, target)
-            .map(f -> f.getStatus().name()) 
-            .orElse("NOT_FRIEND"); 
-}
+        FriendResponse response = new FriendResponse();
+
+        User me = userRepo.findById(currentUserId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        User target = userRepo.findById(targetUserId)
+                .orElseThrow(() -> new RuntimeException("Target user not found"));
+
+        var friendshipOptional = friendRepo.findRelationship(me, target);
+        if (friendshipOptional.isEmpty()) {
+            response.setStatus("NOT_FRIEND");
+            return response;
+        }
+
+        FriendShip friendship = friendshipOptional.get();
+        
+        response.setFriendshipId(friendship.getId());
+        response.setFriendSince(friendship.getCreatedAt()); 
+
+        if (friendship.getStatus() == FriendStatus.ACCEPTED) {
+            response.setStatus("ACCEPTED");
+            return response;
+        }
+
+        if (friendship.getStatus() == FriendStatus.PENDING) {
+            if (friendship.getSender().getId().equals(currentUserId)) {
+                // Mình là Sender -> Đã gửi
+                response.setStatus("PENDING");
+            } else {
+                // Mình là Receiver -> Nhận được
+                response.setStatus("RECEIVED");
+            }
+            return response;
+        }
+
+        // Trường hợp lạ khác
+        response.setStatus("NOT_FRIEND");
+        return response;
+    }
 }

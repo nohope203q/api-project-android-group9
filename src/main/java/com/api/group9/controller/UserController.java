@@ -43,7 +43,6 @@ public class UserController {
             Principal principal // Lấy thông tin người dùng từ Token
     ) {
         try {
-            // Controller chỉ việc lấy tên User từ Principal và chuyển hết data sang Service xử lý
             UserResponse response = userService.updateUserProfile(
                 principal.getName(), 
                 fullName, 

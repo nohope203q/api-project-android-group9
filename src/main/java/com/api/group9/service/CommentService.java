@@ -34,23 +34,18 @@ public class CommentService {
     @Autowired
     private NotificationService notificationService;
 
-    // --- SỬA ĐỔI: Phân trang và trả về DTO chứa thông tin User ---
     public Page<CommentResponse> getCommentsByPost(Long postId, int page, int size) {
         if (!postRepository.existsById(postId)) {
             throw new NoSuchElementException("Post not found with id: " + postId);
         }
 
-        // 1. Tạo Pageable: Sắp xếp mới nhất lên đầu
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
 
-        // 2. Query DB
         Page<Comment> commentPage = commentRepository.findByPostId(postId, pageable);
 
-        // 3. Map sang DTO
         return commentPage.map(this::mapToResponse);
     }
 
-    // Hàm phụ trợ để map Entity -> DTO
     private CommentResponse mapToResponse(Comment comment) {
         CommentResponse res = new CommentResponse();
         res.setId(comment.getId());

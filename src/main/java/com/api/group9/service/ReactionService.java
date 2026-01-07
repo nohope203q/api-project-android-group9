@@ -68,7 +68,7 @@ public class ReactionService {
 
     @Transactional
     public void unlikePost(Long postId) {
-        // 1. Lấy User hiện tại (SỬA: Dùng Email)
+        // 1. Lấy User hiện tại
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new NoSuchElementException("User not found"));

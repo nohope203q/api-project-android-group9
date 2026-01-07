@@ -27,7 +27,6 @@ public class AuthService {
 
     private static final int OTP_EXPIRY_MINUTES = 5;
 
-    // --- LOGIC ĐĂNG KÝ & ĐĂNG NHẬP (Giữ nguyên, chỉ làm gọn) ---
     @Transactional
     public RegisterResponse registerUser(RegisterRequest req) {
         if (userRepository.findByUsername(req.getUsername()).isPresent()) throw new RuntimeException("Tên đăng nhập đã tồn tại.");
@@ -60,7 +59,6 @@ public class AuthService {
 
         String token = jwtService.generateToken(user);
         
-        // Builder pattern hoặc Set thủ công (Nên dùng Mapper như MapStruct nếu dự án lớn)
         UserResponse res = new UserResponse();
         res.setAccessToken(token);
         res.setId(user.getId());
@@ -71,7 +69,6 @@ public class AuthService {
         return res;
     }
 
-    // --- LOGIC OTP & PASSWORD (REFACTOR CỰC MẠNH) ---
 
     // 1. Hàm verify OTP chung
     public boolean verifyOtp(VerifyOtpRequest req) {
@@ -93,12 +90,10 @@ public class AuthService {
             otp.setUsed(true); // Đốt OTP luôn
             otpCodeRepository.save(otp);
         }
-        // Các purpose khác (Change pass/Forgot pass) thì chưa đốt OTP vội, để bước sau đốt.
         
         return true;
     }
 
-    // 2. Hàm Gửi OTP chung (Dùng cho cả Forgot, Change Pass, Resend)
     public void sendOtp(String email, OtpCode.OtpPurpose purpose) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Email không tồn tại trong hệ thống."));
@@ -112,7 +107,6 @@ public class AuthService {
         generateAndSendOtp(user, subject, purpose);
     }
 
-    // 3. Hàm Đổi Mật Khẩu chung (Gộp cả Reset và Change)
     public void processPasswordReset(String email, String otpCode, String newPassword, OtpCode.OtpPurpose purpose) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Người dùng không tồn tại."));
@@ -122,16 +116,13 @@ public class AuthService {
                         user, otpCode, purpose, Instant.now())
                 .orElseThrow(() -> new RuntimeException("OTP không đúng hoặc đã hết hạn."));
 
-        // Update Pass
         user.setPasswordHash(passwordEncoder.encode(newPassword));
         userRepository.save(user);
 
-        // Đốt OTP
         otp.setUsed(true);
         otpCodeRepository.save(otp);
     }
 
-    // --- PRIVATE HELPERS ---
     private void generateAndSendOtp(User user, String subject, OtpCode.OtpPurpose purpose) {
         String code = String.valueOf(new Random().nextInt(900000) + 100000);
         
@@ -143,7 +134,6 @@ public class AuthService {
         otp.setUsed(false);
         otpCodeRepository.save(otp);
 
-        // Gửi mail async để không chặn luồng chính (nếu setup @Async)
         try {
             String body = "Mã OTP: " + code + "\nHết hạn sau 5 phút.";
             emailService.sendEmail(user.getEmail(), subject, body);

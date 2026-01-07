@@ -3,6 +3,7 @@ package com.api.group9.repository;
 import com.api.group9.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
@@ -27,5 +28,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
         ORDER BY u.username ASC
     """)
     List<User> suggestUsers(String q, Pageable pageable);
+
+    @Query("SELECT u FROM User u WHERE u.id <> :myId ORDER BY RAND()") 
+    List<User> findRandomUsers(@Param("myId") Long myId, Pageable pageable);
     
 }

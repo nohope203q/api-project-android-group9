@@ -88,7 +88,6 @@ public class FriendService {
         FriendShip friendship = friendRepo.findById(friendshipId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy lời mời!"));
 
-        // Bảo mật: Chỉ người nhận (Receiver) mới được chấp nhận
         if (!friendship.getReceiver().getEmail().equals(myEmail)) {
             throw new RuntimeException("Bạn không có quyền chấp nhận lời mời này!");
         }
@@ -119,6 +118,12 @@ public class FriendService {
             friendship.setStatus(FriendStatus.ACCEPTED);
             friendship.setRespondedAt(java.time.Instant.now());
             friendRepo.save(friendship);
+            notificationService.sendNotification(
+            friendship.getReceiver(), 
+            friendship.getSender(), 
+            NotificationType.FRIEND_ACCEPT, 
+            null
+        );
             return "Đã chấp nhận lời mời!";
         } else {
             throw new RuntimeException("Bạn là người gửi, không thể tự chấp nhận!");
@@ -187,5 +192,24 @@ public class FriendService {
         // Trường hợp lạ khác
         response.setStatus("NOT_FRIEND");
         return response;
+    }
+
+    public String unfriend(String myEmail, Long targetId) {
+        // Lấy thông tin mình
+        User me = userRepo.findByEmail(myEmail)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        
+        // Lấy thông tin đối phương
+        User target = userRepo.findById(targetId)
+                .orElseThrow(() -> new RuntimeException("Target user not found"));
+
+        // Tìm mối quan hệ giữa 2 người (bất kể ai là người gửi/nhận)
+        FriendShip friendship = friendRepo.findRelationship(me, target)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy mối quan hệ bạn bè!"));
+
+        // Thực hiện xóa khỏi database
+        friendRepo.delete(friendship);
+
+        return "Đã xóa kết bạn thành công!";
     }
 }

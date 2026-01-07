@@ -44,11 +44,9 @@ public class NotificationService {
                 noti.setMessage("đã gửi lời mời kết bạn.");
                 break;
                 
-            // Gộp 2 cái này lại nếu ý nghĩa giống nhau, hoặc xóa bớt 1 cái
             case FRIEND_ACCEPT: 
-            case ACCEPT_FRIEND:
                 noti.setMessage("đã chấp nhận lời mời kết bạn.");
-                break; // <-- QUAN TRỌNG: Đã thêm break ở đây
+                break;
                 
             case COMMENT_REPLY:
                 noti.setMessage("đã trả lời bình luận của bạn.");

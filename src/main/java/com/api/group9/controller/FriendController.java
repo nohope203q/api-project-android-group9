@@ -22,7 +22,7 @@ public class FriendController {
     private FriendService friendService;
 
     @Autowired
-    private UserRepository userRepo; // Cần cái này để lấy ID từ Principal
+    private UserRepository userRepo; 
 
     // 1. API: Check trạng thái (QUAN TRỌNG: Android gọi cái này để hiện nút)
     @GetMapping("/check-status/{targetId}")

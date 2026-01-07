@@ -58,7 +58,6 @@ public class ChatService {
         return true;
     }
 
-    // Logic phức tạp: Lấy các cuộc trò chuyện gần đây
     public List<Message> getRecentConversations(String currentUser) {
         List<Message> allMessages = messageRepository.findBySenderIdOrRecipientIdOrderByTimestampDesc(currentUser, currentUser);
         

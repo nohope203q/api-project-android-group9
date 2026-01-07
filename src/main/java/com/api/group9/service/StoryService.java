@@ -54,30 +54,24 @@ public class StoryService {
     }
 
     public List<StoryResponse> getActiveStories() {
-        
-        // 1. Lấy ID người dùng đang đăng nhập (Từ Spring Security)
+
         String currentEmail = SecurityContextHolder.getContext().getAuthentication().getName();
         User currentUser = userRepository.findByEmail(currentEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         Long currentUserId = currentUser.getId();
 
-        // 2. Lấy danh sách ID bạn bè từ Database
         List<Long> userIds = friendshipRepository.findAllFriendIds(currentUserId);
 
-        // 3. Thêm ID của chính mình vào (để xem story của mình)
         userIds.add(currentUserId);
 
-        // 4. Query trực tiếp từ DB (Chỉ lấy những story cần thiết)
-        // Tuyệt đối KHÔNG DÙNG findAll() ở đây
         List<Story> stories = storyRepository.findActiveStories(userIds, LocalDateTime.now());
 
-        // 5. Convert sang DTO
         return stories.stream()
                 .map(StoryResponse::new)
                 .collect(Collectors.toList());
     }
 
-    // Logic xóa Story
+
     public void deleteStory(Long id, String currentUserEmail) throws Exception {
         // 1. Tìm Story
         Story story = storyRepository.findById(id).orElse(null);

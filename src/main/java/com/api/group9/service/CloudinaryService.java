@@ -15,34 +15,31 @@ public class CloudinaryService {
     @Autowired
     private Cloudinary cloudinary;
 
-    // --- 1. UPLOAD ẢNH (Giữ nguyên) ---
     public String uploadImage(MultipartFile file) throws IOException {
         @SuppressWarnings("unchecked")
         Map<String, Object> uploadResult = (Map<String, Object>) cloudinary.uploader().upload(file.getBytes(),
-                ObjectUtils.asMap("resource_type", "image")); // Set rõ là image cho chắc
+                ObjectUtils.asMap("resource_type", "image")); 
 
         return uploadResult.get("url").toString();
     }
 
-    // --- 2. UPLOAD VIDEO (Thêm mới) ---
     public String uploadVideo(MultipartFile file) throws IOException {
         @SuppressWarnings("unchecked")
         Map<String, Object> uploadResult = (Map<String, Object>) cloudinary.uploader().upload(file.getBytes(),
                 ObjectUtils.asMap(
-                        "resource_type", "video",  // <--- QUAN TRỌNG: Phải có cái này mới chạy video dc
-                        "folder", "stories_video"  // (Tuỳ chọn) Gom video vào 1 folder cho gọn
+                        "resource_type", "video", 
+                        "folder", "stories_video"  
                 ));
 
         return uploadResult.get("url").toString();
     }
 
-    // --- 3. UPLOAD NHẠC (MP3) ---
-    // Cloudinary xử lý file nhạc (audio) giống như video, nên dùng resource_type là "video" hoặc "auto"
+    
     public String uploadMusic(MultipartFile file) throws IOException {
         @SuppressWarnings("unchecked")
         Map<String, Object> uploadResult = (Map<String, Object>) cloudinary.uploader().upload(file.getBytes(),
                 ObjectUtils.asMap(
-                        "resource_type", "video", // Audio dùng chung cơ chế với Video trên Cloudinary
+                        "resource_type", "video", 
                         "folder", "stories_music"
                 ));
 

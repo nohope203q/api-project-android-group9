@@ -43,7 +43,6 @@ public class StoryController {
             storyService.deleteStory(id, principal.getName());
             return ResponseEntity.ok("Đã xóa Story thành công!");
         } catch (RuntimeException e) {
-            // Xử lý thông báo lỗi tùy theo Service ném ra
             if (e.getMessage().startsWith("FORBIDDEN")) {
                 return ResponseEntity.status(403).body(e.getMessage());
             } else if (e.getMessage().startsWith("NOT_FOUND")) {
